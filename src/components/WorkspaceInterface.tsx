@@ -129,14 +129,14 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar - Fixed at top */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="bg-onyx-surface border-b border-onyx-border px-6 py-4 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-1 bg-onyx-bg-secondary rounded-lg p-1">
           <button
             onClick={() => setViewMode('preview')}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               viewMode === 'preview'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
+                : 'text-onyx-text-secondary hover:text-onyx-text-primary'
             }`}
           >
             <Eye className="w-4 h-4" />
@@ -146,8 +146,8 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
             onClick={() => setViewMode('code')}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               viewMode === 'code'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
+                : 'text-onyx-text-secondary hover:text-onyx-text-primary'
             }`}
           >
             <Code className="w-4 h-4" />
@@ -158,7 +158,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
         <div className="flex items-center gap-3">
           <button
             onClick={handlePopOutPreview}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-onyx-bg-secondary text-onyx-text-primary rounded-lg hover:bg-onyx-border transition-colors text-sm font-medium border border-onyx-border"
             title="Open preview in new window"
           >
             <ExternalLink className="w-4 h-4" />
@@ -166,7 +166,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
           </button>
           <button
             onClick={handleDownloadFiles}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-onyx-bg-secondary text-onyx-text-primary rounded-lg hover:bg-onyx-border transition-colors text-sm font-medium border border-onyx-border"
           >
             <Download className="w-4 h-4" />
             Download
@@ -174,7 +174,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
           <button
             onClick={handleDeployToNetlify}
             disabled={isDeploying}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-onyx-primary text-white rounded-lg hover:bg-onyx-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {isDeploying ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -189,39 +189,39 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
       {/* Deploy Result Modal */}
       {showDeployResult && deployResult && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+          <div className="bg-onyx-surface rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl border border-onyx-border">
             <div className="flex items-center gap-3 mb-4">
               {deployResult.success ? (
-                <CheckCircle className="w-6 h-6 text-green-500" />
+                <CheckCircle className="w-6 h-6 text-onyx-accent" />
               ) : (
-                <AlertCircle className="w-6 h-6 text-red-500" />
+                <AlertCircle className="w-6 h-6 text-onyx-warning" />
               )}
-              <h3 className="text-lg font-semibold">
+              <h3 className="text-lg font-semibold text-onyx-text-primary">
                 {deployResult.success ? 'Deployment Successful!' : 'Deployment Failed'}
               </h3>
             </div>
             
             {deployResult.success ? (
               <div className="space-y-4">
-                <p className="text-gray-600">
+                <p className="text-onyx-text-secondary">
                   Your site has been successfully deployed to Netlify!
                 </p>
                 
                 {deployResult.deployUrl && (
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Live URL:</label>
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <label className="text-sm font-medium text-onyx-text-primary">Live URL:</label>
+                    <div className="flex items-center gap-2 p-3 bg-onyx-bg-primary rounded-lg border border-onyx-border">
                       <a
                         href={deployResult.deployUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-sm flex-1 truncate"
+                        className="text-onyx-link hover:text-onyx-highlight text-sm flex-1 truncate"
                       >
                         {deployResult.deployUrl}
                       </a>
                       <button
                         onClick={() => copyToClipboard(deployResult.deployUrl!)}
-                        className="p-1 hover:bg-gray-200 rounded"
+                        className="p-1 hover:bg-onyx-bg-secondary rounded text-onyx-text-secondary"
                         title="Copy URL"
                       >
                         <Copy className="w-4 h-4" />
@@ -232,18 +232,18 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-red-600 text-sm">
+                <p className="text-onyx-warning text-sm">
                   {deployResult.error}
                 </p>
                 {deployResult.error?.includes('token') && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
+                  <div className="p-3 bg-onyx-accent/10 border border-onyx-accent/30 rounded-lg">
+                    <p className="text-sm text-onyx-text-primary">
                       💡 <strong>Need a Netlify token?</strong> Get one from{' '}
                       <a
                         href="https://app.netlify.com/user/applications#personal-access-tokens"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline"
+                        className="text-onyx-link hover:text-onyx-highlight underline"
                       >
                         your Netlify account
                       </a>{' '}
@@ -257,7 +257,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowDeployResult(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-onyx-text-secondary hover:text-onyx-text-primary transition-colors"
               >
                 Close
               </button>
@@ -266,7 +266,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
                   href={deployResult.deployUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-onyx-primary text-white rounded-lg hover:bg-onyx-primary-hover transition-colors"
                 >
                   Visit Site
                 </a>
@@ -279,7 +279,7 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
       {/* Content Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {viewMode === 'preview' ? (
-          <div className="h-full p-6 overflow-auto">
+          <div className="h-full p-6 overflow-auto bg-onyx-bg-secondary">
             <LivePreview files={files} />
           </div>
         ) : (

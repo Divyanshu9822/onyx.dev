@@ -32,7 +32,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Describe the landing page you want to create..."
-            className="w-full p-4 pr-16 min-h-40 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+            className="w-full p-4 pr-16 min-h-40 border border-onyx-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-onyx-highlight focus:border-onyx-highlight transition-all text-sm bg-onyx-surface text-onyx-text-primary placeholder-onyx-text-disabled"
             disabled={isLoading}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -50,7 +50,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
                   key={index}
                   type="button"
                   onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-1"
+                  className="text-xs px-3 py-1.5 bg-onyx-bg-secondary text-onyx-text-secondary rounded-full hover:bg-onyx-border transition-colors flex items-center gap-1"
                 >
                   <Sparkles className="w-3 h-3" />
                   {suggestion}
@@ -63,7 +63,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
             <button
               type="submit"
               disabled={isLoading}
-              className="absolute bottom-4 right-4 p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+              className="absolute bottom-4 right-4 p-3 bg-onyx-primary text-white rounded-xl hover:bg-onyx-primary-hover focus:outline-none focus:ring-2 focus:ring-onyx-highlight focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
               aria-label="Send message"
             >
               {isLoading ? (

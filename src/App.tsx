@@ -18,7 +18,7 @@ function App() {
       }}
 
     >
-      <header className={`px-6 py-4 ${hasMessages && 'border border-gray-200'}`}>
+      <header className={`px-6 py-4 ${hasMessages ? 'border-b border-onyx-border bg-onyx-surface' : ''}`}>
         <img src={icon} alt="App Icon" className="w-12 h-12 rounded-md" draggable="false" />
       </header>
 

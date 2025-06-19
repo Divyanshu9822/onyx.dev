@@ -16,26 +16,33 @@ const FILE_ICONS = {
   'script.js': Code
 };
 
+const FILE_COLORS = {
+  'index.html': 'text-onyx-warning',
+  'style.css': 'text-onyx-link',
+  'script.js': 'text-onyx-secondary'
+};
+
 export function FileEditor({ files, activeFile, onFileChange, onActiveFileChange }: FileEditorProps) {
   const currentFile = files.find(f => f.name === activeFile);
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
       {/* File Tabs */}
-      <div className="flex bg-gray-800 border-b border-gray-700">
+      <div className="flex bg-onyx-text-primary border-b border-onyx-border">
         {files.map((file) => {
           const Icon = FILE_ICONS[file.name as keyof typeof FILE_ICONS];
+          const colorClass = FILE_COLORS[file.name as keyof typeof FILE_COLORS];
           return (
             <button
               key={file.name}
               onClick={() => onActiveFileChange(file.name)}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeFile === file.name
-                  ? 'bg-gray-900 text-white border-b-2 border-blue-500'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                  ? 'bg-gray-900 text-white border-b-2 border-onyx-accent'
+                  : 'text-onyx-text-disabled hover:text-white hover:bg-gray-700'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={`w-4 h-4 ${activeFile === file.name ? colorClass : ''}`} />
               {file.name}
             </button>
           );
