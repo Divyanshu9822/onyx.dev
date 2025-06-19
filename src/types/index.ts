@@ -4,6 +4,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   generatedFiles?: GeneratedFiles;
+  pagePlan?: PagePlan;
 }
 
 export interface GeneratedFiles {
@@ -27,4 +28,58 @@ export interface EditorFile {
 export interface EditorState {
   files: EditorFile[];
   activeFile: string;
+}
+
+// New types for agentic system
+export interface PagePlan {
+  id: string;
+  title: string;
+  description: string;
+  sections: SectionPlan[];
+  globalStyles?: string;
+  globalScripts?: string;
+}
+
+export interface SectionPlan {
+  id: string;
+  type: SectionType;
+  name: string;
+  description: string;
+  order: number;
+  requirements: string[];
+}
+
+export type SectionType = 
+  | 'header'
+  | 'hero'
+  | 'features'
+  | 'about'
+  | 'services'
+  | 'pricing'
+  | 'testimonials'
+  | 'cta'
+  | 'contact'
+  | 'footer';
+
+export interface Section {
+  id: string;
+  type: SectionType;
+  name: string;
+  html: string;
+  css?: string;
+  js?: string;
+  isGenerated: boolean;
+  isGenerating: boolean;
+}
+
+export interface PageState {
+  plan?: PagePlan;
+  sections: Section[];
+  isPlanning: boolean;
+  isGenerating: boolean;
+  generationProgress: {
+    current: number;
+    total: number;
+    currentSection?: string;
+  };
 }

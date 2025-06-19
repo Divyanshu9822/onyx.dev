@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Message, ChatState } from '../types';
-import { generateWebFiles } from '../services/geminiApi';
+import { usePageGeneration } from './usePageGeneration';
 
 export function useChat() {
   const [state, setState] = useState<ChatState>({
@@ -8,6 +8,8 @@ export function useChat() {
     isLoading: false,
     error: null,
   });
+
+  const { pageState, generatePage, regenerateSection, getComposedPage } = usePageGeneration();
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
@@ -25,26 +27,40 @@ export function useChat() {
     }));
 
     try {
-      const generatedFiles = await generateWebFiles(content);
+      await generatePage(content);
       
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: 'I\'ve generated a beautiful web application with separate HTML, CSS, and JavaScript files.',
-        timestamp: new Date(),
-        generatedFiles,
+      // Wait for generation to complete
+      const checkCompletion = () => {
+        if (!pageState.isPlanning && !pageState.isGenerating) {
+          const composedPage = getComposedPage();
+          
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'assistant',
+            content: `I've created your landing page with ${pageState.sections.length} sections: ${pageState.sections.map(s => s.name).join(', ')}. Each section was carefully crafted to match your requirements.`,
+            timestamp: new Date(),
+            generatedFiles: composedPage,
+            pagePlan: pageState.plan,
+          };
+
+          setState(prev => ({
+            ...prev,
+            messages: [userMessage, assistantMessage],
+            isLoading: false,
+          }));
+        } else {
+          // Check again in 500ms
+          setTimeout(checkCompletion, 500);
+        }
       };
 
-      setState(prev => ({
-        ...prev,
-        messages: [userMessage, assistantMessage],
-        isLoading: false,
-      }));
+      checkCompletion();
+      
     } catch (error) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: error instanceof Error ? error.message : 'An error occurred while generating the files.',
+        content: error instanceof Error ? error.message : 'An error occurred while generating the landing page.',
         timestamp: new Date(),
       };
 
@@ -55,10 +71,13 @@ export function useChat() {
         error: error instanceof Error ? error.message : 'An error occurred',
       }));
     }
-  }, []);
+  }, [generatePage, pageState, getComposedPage]);
 
   return {
     ...state,
     sendMessage,
+    pageState,
+    regenerateSection,
+    getComposedPage
   };
 }

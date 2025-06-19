@@ -5,8 +5,19 @@ import icon from './assets/icon.jpg';
 import bg from './assets/bg.png'; 
 
 function App() {
-  const { messages, isLoading, sendMessage } = useChat();
+  const { messages, isLoading, sendMessage, pageState, regenerateSection, getComposedPage } = useChat();
   const hasMessages = messages.length > 0;
+
+  const handleRegenerateSection = async (sectionId: string) => {
+    const userMessage = messages.find(m => m.type === 'user');
+    if (userMessage && regenerateSection) {
+      try {
+        await regenerateSection(sectionId, userMessage.content);
+      } catch (error) {
+        console.error('Failed to regenerate section:', error);
+      }
+    }
+  };
 
   return (
     <div
@@ -16,7 +27,6 @@ function App() {
         backgroundSize: 'cover',
         backgroundPosition: 'bottom center',
       }}
-
     >
       <header className={`px-6 py-4 ${hasMessages ? 'border-b border-onyx-border bg-onyx-surface' : ''}`}>
         <img src={icon} alt="App Icon" className="w-12 h-12 rounded-md" draggable="false" />
@@ -27,6 +37,9 @@ function App() {
           messages={messages}
           isLoading={isLoading}
           onSendMessage={sendMessage}
+          pageState={pageState}
+          onRegenerateSection={handleRegenerateSection}
+          getComposedPage={getComposedPage}
         />
       </main>
     </div>

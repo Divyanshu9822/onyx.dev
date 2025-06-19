@@ -1,12 +1,15 @@
 import React from 'react';
-import { User, Bot, Copy, FileText, Palette, Code } from 'lucide-react';
+import { User, Bot, Copy, FileText, Palette, Code, RefreshCw } from 'lucide-react';
 import { Message } from '../types';
+import { GenerationProgress } from './GenerationProgress';
 
 interface MessageBubbleProps {
   message: Message;
+  pageState?: any;
+  onRegenerateSection?: (sectionId: string) => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, pageState, onRegenerateSection }: MessageBubbleProps) {
   const [copied, setCopied] = React.useState<string | null>(null);
 
   const handleCopyFile = async (fileName: string, content: string) => {
@@ -37,8 +40,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <Bot className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
-            {message.generatedFiles ? (
+          {/* Show generation progress if currently generating */}
+          {pageState && (pageState.isPlanning || pageState.isGenerating) ? (
+            <GenerationProgress pageState={pageState} />
+          ) : message.generatedFiles ? (
+            <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 bg-onyx-accent rounded-full"></div>
@@ -46,6 +52,32 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 </div>
                 
                 <p className="text-sm text-onyx-text-secondary mb-3">{message.content}</p>
+                
+                {/* Page Plan Summary */}
+                {message.pagePlan && (
+                  <div className="bg-onyx-bg-primary border border-onyx-border rounded-lg p-3 mb-3">
+                    <h4 className="text-sm font-medium text-onyx-text-primary mb-2">Page Structure</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {message.pagePlan.sections.map((section, index) => (
+                        <div key={section.id} className="flex items-center gap-2 text-xs">
+                          <span className="w-4 h-4 bg-onyx-accent/20 rounded text-onyx-accent text-center leading-4 font-medium">
+                            {index + 1}
+                          </span>
+                          <span className="text-onyx-text-secondary">{section.name}</span>
+                          {onRegenerateSection && (
+                            <button
+                              onClick={() => onRegenerateSection(section.id)}
+                              className="ml-auto p-1 hover:bg-onyx-bg-secondary rounded text-onyx-text-disabled hover:text-onyx-text-secondary"
+                              title="Regenerate section"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {/* File Preview Cards - Compact */}
                 <div className="space-y-2">
@@ -80,14 +112,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 
                 <div className="mt-3 p-3 bg-onyx-accent/10 border border-onyx-accent/30 rounded-lg">
                   <p className="text-xs text-onyx-text-primary">
-                    🎉 Your web application is ready! Switch to the preview or code view to see and edit your files.
+                    🎉 Your landing page is ready! Each section was generated individually for maximum customization. Switch to the preview or code view to see and edit your files.
                   </p>
                 </div>
               </div>
-            ) : (
+            </div>
+          ) : (
+            <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
               <p className="text-sm text-onyx-text-secondary">{message.content}</p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { FileEditor } from './FileEditor';
 import { LivePreview } from './LivePreview';
 import { useEditor } from '../hooks/useEditor';
-import { GeneratedFiles } from '../types';
-import { Eye, Code, Download, ExternalLink, Globe, Loader2, CheckCircle, AlertCircle, Copy } from 'lucide-react';
+import { GeneratedFiles, PageState } from '../types';
+import { Eye, Code, Download, ExternalLink, Globe, Loader2, CheckCircle, AlertCircle, Copy, RefreshCw } from 'lucide-react';
 import { deployToNetlify, DeployResult } from '../services/netlifyApi';
 
 interface WorkspaceInterfaceProps {
   generatedFiles?: GeneratedFiles;
+  pageState?: PageState;
+  onRegenerateSection?: (sectionId: string) => void;
 }
 
 type ViewMode = 'preview' | 'code';
 
-export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) {
+export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSection }: WorkspaceInterfaceProps) {
   const { files, activeFile, updateFileContent, setActiveFile, loadGeneratedFiles } = useEditor();
   const [viewMode, setViewMode] = useState<ViewMode>('preview');
   const [isDeploying, setIsDeploying] = useState(false);
@@ -130,29 +132,38 @@ export function WorkspaceInterface({ generatedFiles }: WorkspaceInterfaceProps) 
     <div className="h-full flex flex-col">
       {/* Toolbar - Fixed at top */}
       <div className="bg-onyx-surface border-b border-onyx-border px-6 py-4 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-1 bg-onyx-bg-secondary rounded-lg p-1">
-          <button
-            onClick={() => setViewMode('preview')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              viewMode === 'preview'
-                ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
-                : 'text-onyx-text-secondary hover:text-onyx-text-primary'
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            Preview
-          </button>
-          <button
-            onClick={() => setViewMode('code')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-              viewMode === 'code'
-                ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
-                : 'text-onyx-text-secondary hover:text-onyx-text-primary'
-            }`}
-          >
-            <Code className="w-4 h-4" />
-            Code
-          </button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 bg-onyx-bg-secondary rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('preview')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'preview'
+                  ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
+                  : 'text-onyx-text-secondary hover:text-onyx-text-primary'
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              Preview
+            </button>
+            <button
+              onClick={() => setViewMode('code')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'code'
+                  ? 'bg-onyx-surface text-onyx-text-primary shadow-sm border border-onyx-border'
+                  : 'text-onyx-text-secondary hover:text-onyx-text-primary'
+              }`}
+            >
+              <Code className="w-4 h-4" />
+              Code
+            </button>
+          </div>
+
+          {/* Section regeneration info */}
+          {pageState?.plan && (
+            <div className="text-xs text-onyx-text-secondary">
+              {pageState.sections.length} sections • Click sections in chat to regenerate
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-3">

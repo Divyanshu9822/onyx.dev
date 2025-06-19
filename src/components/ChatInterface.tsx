@@ -9,9 +9,19 @@ interface ChatInterfaceProps {
   messages: Message[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
+  pageState?: any;
+  onRegenerateSection?: (sectionId: string) => void;
+  getComposedPage?: () => any;
 }
 
-export function ChatInterface({ messages, isLoading, onSendMessage }: ChatInterfaceProps) {
+export function ChatInterface({ 
+  messages, 
+  isLoading, 
+  onSendMessage, 
+  pageState, 
+  onRegenerateSection,
+  getComposedPage 
+}: ChatInterfaceProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];
@@ -21,28 +31,26 @@ export function ChatInterface({ messages, isLoading, onSendMessage }: ChatInterf
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-if (!hasMessages && !isLoading) {
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-start px-4">
-      {/* Logo */}
-      <div className="w-full max-w-md h-52 overflow-hidden">
-        <img
-          src={biglogo}
-          alt="Big Logo"
-          className="w-full h-full object-cover"
-          draggable="false"
-        />
+  if (!hasMessages && !isLoading) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-start px-4">
+        {/* Logo */}
+        <div className="w-full max-w-md h-52 overflow-hidden">
+          <img
+            src={biglogo}
+            alt="Big Logo"
+            className="w-full h-full object-cover"
+            draggable="false"
+          />
+        </div>
+
+        {/* Chat input box */}
+        <div className="w-full max-w-2xl">
+          <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+        </div>
       </div>
-
-      {/* Chat input box */}
-      <div className="w-full max-w-2xl">
-        <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
-      </div>
-    </div>
-  );
-}
-
-
+    );
+  }
 
   // Workspace view - split layout with chat and editor/preview
   return (
@@ -52,22 +60,39 @@ if (!hasMessages && !isLoading) {
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6 bg-onyx-bg-primary">
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble 
+                key={message.id} 
+                message={message} 
+                pageState={pageState}
+                onRegenerateSection={onRegenerateSection}
+              />
             ))}
-            {isLoading && (
+            {(isLoading || (pageState && (pageState.isPlanning || pageState.isGenerating))) && (
               <div className="flex justify-start">
                 <div className="flex items-start gap-3 max-w-full w-full">
-                  <div className="w-8 h-8 bg-onyx-text-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <div className="w-4 h-4 bg-white rounded-full animate-pulse"></div>
+                  <div className="w-7 h-7 bg-onyx-text-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
                   </div>
-                  <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <span className="ml-2 text-onyx-text-secondary text-sm">Generating your web application...</span>
+                  {pageState ? (
+                    <MessageBubble 
+                      message={{
+                        id: 'generating',
+                        type: 'assistant',
+                        content: '',
+                        timestamp: new Date()
+                      }}
+                      pageState={pageState}
+                    />
+                  ) : (
+                    <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <span className="ml-2 text-onyx-text-secondary text-sm">Generating your web application...</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -82,8 +107,12 @@ if (!hasMessages && !isLoading) {
 
       {/* Right Panel - Workspace */}
       <div className="flex-1 bg-onyx-bg-secondary flex flex-col">
-        {hasGeneratedFiles ? (
-          <WorkspaceInterface generatedFiles={latestMessage.generatedFiles} />
+        {hasGeneratedFiles && getComposedPage ? (
+          <WorkspaceInterface 
+            generatedFiles={getComposedPage()} 
+            pageState={pageState}
+            onRegenerateSection={onRegenerateSection}
+          />
         ) : (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-onyx-text-secondary">
