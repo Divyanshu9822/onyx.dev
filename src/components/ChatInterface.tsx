@@ -26,6 +26,7 @@ export function ChatInterface({
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];
   const hasGeneratedFiles = latestMessage?.type === 'assistant' && latestMessage.generatedFiles;
+  const hasGeneratedPage = messages.some(m => m.type === 'assistant' && m.generatedFiles);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +47,11 @@ export function ChatInterface({
 
         {/* Chat input box */}
         <div className="w-full max-w-2xl">
-          <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+          <ChatInput 
+            onSendMessage={onSendMessage} 
+            isLoading={isLoading}
+            hasGeneratedPage={hasGeneratedPage}
+          />
         </div>
       </div>
     );
@@ -67,12 +72,9 @@ export function ChatInterface({
                 onRegenerateSection={onRegenerateSection}
               />
             ))}
-            {(isLoading || (pageState && (pageState.isPlanning || pageState.isGenerating))) && (
+            {(isLoading || (pageState && (pageState.isPlanning || pageState.isGenerating || pageState.isEditing))) && (
               <div className="flex justify-start">
                 <div className="flex items-start gap-3 max-w-full w-full">
-                  {/* <div className="w-7 h-7 bg-onyx-text-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                  </div> */}
                   {pageState ? (
                     <MessageBubble 
                       message={{
@@ -89,7 +91,9 @@ export function ChatInterface({
                         <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                         <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        <span className="ml-2 text-onyx-text-secondary text-sm">Generating your web application...</span>
+                        <span className="ml-2 text-onyx-text-secondary text-sm">
+                          {hasGeneratedPage ? 'Processing your changes...' : 'Generating your web application...'}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -101,7 +105,11 @@ export function ChatInterface({
         </div>
         
         <div className="flex-shrink-0 border-t border-onyx-border bg-onyx-bg-primary">
-          <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+          <ChatInput 
+            onSendMessage={onSendMessage} 
+            isLoading={isLoading}
+            hasGeneratedPage={hasGeneratedPage}
+          />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { PageState, PagePlan, Section, SectionPlan } from '../types';
 import { generatePagePlan } from '../services/planningApi';
 import { generateSection } from '../services/sectionApi';
 import { composePage } from '../services/pageComposer';
+import { identifyTargetSection, editSection } from '../services/editApi';
 
 // Configuration for parallel section generation
 const MAX_PARALLEL_CALLS = 3;
@@ -12,6 +13,7 @@ export function usePageGeneration() {
     sections: [],
     isPlanning: false,
     isGenerating: false,
+    isEditing: false,
     generationProgress: {
       current: 0,
       total: 0
@@ -223,6 +225,72 @@ export function usePageGeneration() {
     }
   }, [pageState]);
 
+  const editSectionByPrompt = useCallback(async (userPrompt: string) => {
+    const { plan, sections } = pageState;
+    if (!plan || sections.length === 0) {
+      throw new Error('No page generated yet. Please generate a page first.');
+    }
+
+    try {
+      setPageState(prev => ({ ...prev, isEditing: true }));
+
+      // Step 1: Identify which section to edit
+      const identification = await identifyTargetSection(userPrompt, plan);
+      const targetSection = sections.find(s => s.id === identification.sectionId);
+      
+      if (!targetSection) {
+        throw new Error('Could not identify the section to edit. Please be more specific.');
+      }
+
+      // Step 2: Mark section as generating
+      setPageState(prev => ({
+        ...prev,
+        sections: prev.sections.map(section => 
+          section.id === identification.sectionId 
+            ? { ...section, isGenerating: true }
+            : section
+        )
+      }));
+
+      // Step 3: Generate edited section
+      const editedCode = await editSection(userPrompt, targetSection, plan);
+      
+      // Step 4: Update section with edited code
+      setPageState(prev => ({
+        ...prev,
+        sections: prev.sections.map(section => 
+          section.id === identification.sectionId 
+            ? { 
+                ...section, 
+                html: editedCode.html,
+                css: editedCode.css,
+                js: editedCode.js,
+                isGenerating: false
+              }
+            : section
+        ),
+        isEditing: false
+      }));
+
+      return {
+        sectionId: identification.sectionId,
+        sectionName: targetSection.name,
+        changeDescription: userPrompt
+      };
+
+    } catch (error) {
+      console.error('Error editing section:', error);
+      setPageState(prev => ({
+        ...prev,
+        isEditing: false,
+        sections: prev.sections.map(section => 
+          ({ ...section, isGenerating: false })
+        )
+      }));
+      throw error;
+    }
+  }, [pageState]);
+
   const updateSection = useCallback((sectionId: string, updates: Partial<Section>) => {
     setPageState(prev => ({
       ...prev,
@@ -238,11 +306,17 @@ export function usePageGeneration() {
     return composePage(pageState.sections, pageState.plan);
   }, [pageState.sections, pageState.plan]);
 
+  const hasGeneratedPage = useCallback(() => {
+    return pageState.sections.length > 0 && pageState.sections.some(s => s.isGenerated);
+  }, [pageState.sections]);
+
   return {
     pageState,
     generatePage,
     regenerateSection,
+    editSectionByPrompt,
     updateSection,
-    getComposedPage
+    getComposedPage,
+    hasGeneratedPage
   };
 }

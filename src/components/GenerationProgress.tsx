@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, CheckCircle, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, Edit3 } from 'lucide-react';
 import { PageState } from '../types';
 
 interface GenerationProgressProps {
@@ -7,9 +7,9 @@ interface GenerationProgressProps {
 }
 
 export function GenerationProgress({ pageState }: GenerationProgressProps) {
-  const { isPlanning, isGenerating, generationProgress, sections } = pageState;
+  const { isPlanning, isGenerating, isEditing, generationProgress, sections } = pageState;
 
-  if (!isPlanning && !isGenerating) {
+  if (!isPlanning && !isGenerating && !isEditing) {
     return null;
   }
 
@@ -21,6 +21,14 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
           <div>
             <p className="text-sm font-medium text-onyx-text-primary">Planning your landing page...</p>
             <p className="text-xs text-onyx-text-secondary">Analyzing requirements and creating structure</p>
+          </div>
+        </div>
+      ) : isEditing ? (
+        <div className="flex items-center gap-3">
+          <Edit3 className="w-5 h-5 text-onyx-primary animate-pulse" />
+          <div>
+            <p className="text-sm font-medium text-onyx-text-primary">Applying your changes...</p>
+            <p className="text-xs text-onyx-text-secondary">Identifying section and generating updates</p>
           </div>
         </div>
       ) : (
