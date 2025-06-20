@@ -62,10 +62,10 @@ export function LivePreview({ files }: LivePreviewProps) {
 
   return (
     <div className="h-full bg-onyx-surface rounded-xl border border-onyx-border overflow-hidden shadow-sm">
-      <div className="flex items-center gap-2 px-4 py-3 bg-onyx-bg-secondary border-b border-onyx-border">
-        <div className="w-3 h-3 bg-onyx-warning rounded-full"></div>
-        <div className="w-3 h-3 bg-onyx-accent rounded-full"></div>
-        <div className="w-3 h-3 bg-onyx-secondary rounded-full"></div>
+      <div className="flex items-center gap-2 px-4 py-3 bg-white border-b border-onyx-border">
+        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
         <span className="ml-2 text-sm text-onyx-text-primary font-medium">Live Preview</span>
       </div>
       <iframe
