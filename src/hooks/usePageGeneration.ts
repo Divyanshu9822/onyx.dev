@@ -6,7 +6,7 @@ import { composePage } from '../services/pageComposer';
 import { identifyTargetSection, editSection } from '../services/editApi';
 
 // Configuration for parallel section generation
-const MAX_PARALLEL_CALLS = 3;
+const MAX_PARALLEL_CALLS = 4;
 
 export function usePageGeneration() {
   const [pageState, setPageState] = useState<PageState>({
