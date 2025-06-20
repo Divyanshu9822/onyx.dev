@@ -302,8 +302,8 @@ export function usePageGeneration() {
     }));
   }, []);
 
-  const getComposedPage = useCallback(() => {
-    return composePage(pageState.sections, pageState.plan);
+  const getComposedPage = useCallback(async () => {
+    return await composePage(pageState.sections, pageState.plan);
   }, [pageState.sections, pageState.plan]);
 
   const hasGeneratedPage = useCallback(() => {

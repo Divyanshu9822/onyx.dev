@@ -40,37 +40,51 @@ export function useChat() {
         // Wait for generation to complete
         const checkCompletion = () => {
           if (!pageState.isPlanning && !pageState.isGenerating) {
-            const composedPage = getComposedPage();
-            
-            // Get list of successfully generated sections
-            const generatedSections = pageState.sections.filter(s => s.isGenerated);
-            const failedSections = pageState.sections.filter(s => !s.isGenerated);
-            
-            // Create a more detailed success message
-            let successMessage = `✅ Page generated successfully!\n`;
-            successMessage += `Sections created: ${generatedSections.map(s => s.name).join(', ')}.\n`;
-            
-            // Add information about failed sections if any
-            if (failedSections.length > 0) {
-              successMessage += `\n⚠️ Some sections failed to generate: ${failedSections.map(s => s.name).join(', ')}.\n`;
-              successMessage += `You can try regenerating these sections individually.`;
-            }
-            
-            const assistantMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant',
-              content: successMessage,
-              timestamp: new Date(),
-              generatedFiles: composedPage,
-              pagePlan: pageState.plan,
-            };
+            const fetchComposedPage = async () => {
+              try {
+                const composedPage = await getComposedPage();
+                
+                // Get list of successfully generated sections
+                const generatedSections = pageState.sections.filter(s => s.isGenerated);
+                const failedSections = pageState.sections.filter(s => !s.isGenerated);
+                
+                // Create a more detailed success message
+                let successMessage = `✅ Page generated successfully!\n`;
+                successMessage += `Sections created: ${generatedSections.map(s => s.name).join(', ')}.\n`;
+                
+                // Add information about failed sections if any
+                if (failedSections.length > 0) {
+                  successMessage += `\n⚠️ Some sections failed to generate: ${failedSections.map(s => s.name).join(', ')}.\n`;
+                  successMessage += `You can try regenerating these sections individually.`;
+                }
+                
+                const assistantMessage: Message = {
+                  id: (Date.now() + 1).toString(),
+                  type: 'assistant',
+                  content: successMessage,
+                  timestamp: new Date(),
+                  generatedFiles: composedPage,
+                  pagePlan: pageState.plan,
+                };
 
-            setState(prev => ({
-              ...prev,
-              messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
-              isLoading: false,
-              currentLoadingMessageId: null,
-            }));
+                setState(prev => ({
+                  ...prev,
+                  messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
+                  isLoading: false,
+                  currentLoadingMessageId: null,
+                }));
+              } catch (error) {
+                console.error('Error getting composed page:', error);
+                setState(prev => ({
+                  ...prev,
+                  isLoading: false,
+                  currentLoadingMessageId: null,
+                  error: 'Failed to format page content'
+                }));
+              }
+            };
+            
+            fetchComposedPage();
           } else {
             // Check again in 500ms
             setTimeout(checkCompletion, 500);
@@ -85,28 +99,42 @@ export function useChat() {
         // Wait for edit to complete
         const checkEditCompletion = () => {
           if (!pageState.isEditing && !pageState.sections.some(s => s.isGenerating)) {
-            const composedPage = getComposedPage();
-            
-            // Create a more detailed edit success message
-            let editSuccessMessage = `✅ Changes applied successfully!\n`;
-            editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
-            editSuccessMessage += `The changes are now visible in the preview.`;
-            
-            const assistantMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              type: 'assistant',
-              content: editSuccessMessage,
-              timestamp: new Date(),
-              generatedFiles: composedPage,
-              editResult: editResult,
-            };
+            const fetchComposedPage = async () => {
+              try {
+                const composedPage = await getComposedPage();
+                
+                // Create a more detailed edit success message
+                let editSuccessMessage = `✅ Changes applied successfully!\n`;
+                editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
+                editSuccessMessage += `The changes are now visible in the preview.`;
+                
+                const assistantMessage: Message = {
+                  id: (Date.now() + 1).toString(),
+                  type: 'assistant',
+                  content: editSuccessMessage,
+                  timestamp: new Date(),
+                  generatedFiles: composedPage,
+                  editResult: editResult,
+                };
 
-            setState(prev => ({
-              ...prev,
-              messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
-              isLoading: false,
-              currentLoadingMessageId: null,
-            }));
+                setState(prev => ({
+                  ...prev,
+                  messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
+                  isLoading: false,
+                  currentLoadingMessageId: null,
+                }));
+              } catch (error) {
+                console.error('Error getting composed page after edit:', error);
+                setState(prev => ({
+                  ...prev,
+                  isLoading: false,
+                  currentLoadingMessageId: null,
+                  error: 'Failed to format page content after edit'
+                }));
+              }
+            };
+            
+            fetchComposedPage();
           } else {
             // Check again in 500ms
             setTimeout(checkEditCompletion, 500);

@@ -3,6 +3,7 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { WorkspaceInterface } from './WorkspaceInterface';
 import { Message, PageState, GeneratedFiles } from '../types';
+import { useState, useEffect } from 'react';
 import biglogo from '../assets/biglogo.png';
 
 interface ChatInterfaceProps {
@@ -11,7 +12,7 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   pageState?: PageState;
   onRegenerateSection?: (sectionId: string) => void;
-  getComposedPage?: () => GeneratedFiles;
+  getComposedPage?: () => Promise<GeneratedFiles>;
   currentLoadingMessageId?: string | null;
 }
 
@@ -25,10 +26,27 @@ export function ChatInterface({
   currentLoadingMessageId
 }: ChatInterfaceProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const [composedFiles, setComposedFiles] = useState<GeneratedFiles | null>(null);
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];
   const hasGeneratedFiles = latestMessage?.type === 'assistant' && latestMessage.generatedFiles;
   const hasGeneratedPage = messages.some(m => m.type === 'assistant' && m.generatedFiles);
+
+  // Fetch composed page when needed
+  useEffect(() => {
+    if (hasGeneratedFiles && getComposedPage) {
+      const fetchComposedPage = async () => {
+        try {
+          const files = await getComposedPage();
+          setComposedFiles(files);
+        } catch (error) {
+          console.error('Error fetching composed page:', error);
+        }
+      };
+      
+      fetchComposedPage();
+    }
+  }, [hasGeneratedFiles, getComposedPage]);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,9 +140,9 @@ export function ChatInterface({
 
       {/* Right Panel - Workspace */}
       <div className="flex-1 bg-onyx-bg-secondary flex flex-col">
-        {hasGeneratedFiles && getComposedPage ? (
-          <WorkspaceInterface 
-            generatedFiles={getComposedPage()} 
+        {hasGeneratedFiles && composedFiles ? (
+          <WorkspaceInterface
+            generatedFiles={composedFiles}
             pageState={pageState}
             onRegenerateSection={onRegenerateSection}
           />

@@ -1,6 +1,7 @@
 import { Section, PagePlan } from '../types';
+import { formatCode } from './formatterService';
 
-export function composePage(sections: Section[], pagePlan?: PagePlan): { html: string; css: string; js: string } {
+export async function composePage(sections: Section[], pagePlan?: PagePlan): Promise<{ html: string; css: string; js: string }> {
   // Sort sections by their order in the plan
   const sortedSections = [...sections].sort((a, b) => {
     const aOrder = pagePlan?.sections.find(s => s.id === a.id)?.order ?? 999;
@@ -54,18 +55,33 @@ document.addEventListener('DOMContentLoaded', function() {
     ${sortedSections.map(section => section.js || '').join('\n\n    ')}
 });`;
 
-  return {
-    html: combinedHtml,
-    css: combinedCss,
-    js: combinedJs
-  };
+  try {
+    // Format the combined code
+    const formattedHtml = await formatCode(combinedHtml, 'html');
+    const formattedCss = await formatCode(combinedCss, 'css');
+    const formattedJs = await formatCode(combinedJs, 'js');
+
+    return {
+      html: formattedHtml,
+      css: formattedCss,
+      js: formattedJs
+    };
+  } catch (error) {
+    // If formatting fails, return unformatted code
+    console.error('Error formatting page code:', error);
+    return {
+      html: combinedHtml,
+      css: combinedCss,
+      js: combinedJs
+    };
+  }
 }
 
-export function updateSectionInPage(
-  sections: Section[], 
-  updatedSection: Section, 
+export async function updateSectionInPage(
+  sections: Section[],
+  updatedSection: Section,
   pagePlan?: PagePlan
-): { html: string; css: string; js: string } {
+): Promise<{ html: string; css: string; js: string }> {
   const updatedSections = sections.map(section => 
     section.id === updatedSection.id ? updatedSection : section
   );
