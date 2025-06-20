@@ -49,7 +49,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 bg-onyx-accent rounded-full"></div>
                   <span className="text-sm font-medium text-onyx-text-primary">
-                  {message.editResult ? `${message.editResult.sectionName}${message.editResult.sectionName.endsWith('Section') ? '' : ' Section'} updated successfully` : 'Generated successfully'}
+                  {message.editResult ? `Updated relevant section(s) successfully` : 'Generated Landing successfully'}
                   </span>
                 </div>
                 

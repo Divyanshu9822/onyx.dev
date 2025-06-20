@@ -72,6 +72,7 @@ export interface Section {
   js?: string;
   isGenerated: boolean;
   isGenerating: boolean;
+  isInEditPlan?: boolean;
 }
 
 export interface PageState {
