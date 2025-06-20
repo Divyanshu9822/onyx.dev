@@ -7,6 +7,7 @@ export function useChat() {
     messages: [],
     isLoading: false,
     error: null,
+    currentLoadingMessageId: null,
   });
 
   const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage } = usePageGeneration();
@@ -25,6 +26,7 @@ export function useChat() {
       messages: [...prev.messages, userMessage],
       isLoading: true,
       error: null,
+      currentLoadingMessageId: 'loading-' + Date.now().toString(),
     }));
 
     try {
@@ -53,6 +55,7 @@ export function useChat() {
               ...prev,
               messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
               isLoading: false,
+              currentLoadingMessageId: null,
             }));
           } else {
             // Check again in 500ms
@@ -83,6 +86,7 @@ export function useChat() {
               ...prev,
               messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
               isLoading: false,
+              currentLoadingMessageId: null,
             }));
           } else {
             // Check again in 500ms
@@ -106,6 +110,7 @@ export function useChat() {
         messages: [...prev.messages.slice(0, -1), userMessage, errorMessage],
         isLoading: false,
         error: error instanceof Error ? error.message : 'An error occurred',
+        currentLoadingMessageId: null,
       }));
     }
   }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage]);
@@ -115,6 +120,7 @@ export function useChat() {
     sendMessage,
     pageState,
     regenerateSection,
-    getComposedPage
+    getComposedPage,
+    currentLoadingMessageId: state.currentLoadingMessageId
   };
 }

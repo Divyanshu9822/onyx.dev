@@ -18,6 +18,7 @@ export interface ChatState {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
+  currentLoadingMessageId: string | null;
 }
 
 export interface EditorFile {

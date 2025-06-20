@@ -1,11 +1,11 @@
 import React from 'react';
 import { User, Bot, Copy, FileText, Palette, Code, RefreshCw, Edit3 } from 'lucide-react';
-import { Message } from '../types';
+import { Message, PageState } from '../types';
 import { GenerationProgress } from './GenerationProgress';
 
 interface MessageBubbleProps {
   message: Message;
-  pageState?: any;
+  pageState?: PageState;
   onRegenerateSection?: (sectionId: string) => void;
 }
 
@@ -40,7 +40,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
           <Bot className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          {/* Show generation progress if currently generating */}
+          {/* Show generation progress only for the current loading message */}
           {pageState && (pageState.isPlanning || pageState.isGenerating || pageState.isEditing) ? (
             <GenerationProgress pageState={pageState} />
           ) : message.generatedFiles ? (
