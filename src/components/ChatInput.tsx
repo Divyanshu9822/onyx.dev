@@ -4,9 +4,10 @@ import { Send, Loader2, Sparkles } from 'lucide-react';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  hasGeneratedPage?: boolean;
 }
 
-export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -17,12 +18,28 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
     }
   };
 
-  // const suggestions = [
+  const getPlaceholder = () => {
+    if (hasGeneratedPage) {
+      return "Describe the changes you'd like to make...";
+    }
+    return "Describe the landing page you want to create...";
+  };
+
+  // const editSuggestions = [
+  //   "Add a student discount to the pricing section",
+  //   "Make the hero button gradient",
+  //   "Add a testimonial from a tech founder",
+  //   "Change the contact form to include a phone field"
+  // ];
+
+  // const initialSuggestions = [
   //   "A modern portfolio website with smooth animations",
   //   "A SaaS landing page with pricing tiers and testimonials",
   //   "A restaurant website with menu and online ordering",
   //   "A fitness app dashboard with progress tracking"
   // ];
+
+  // const suggestions = hasGeneratedPage ? editSuggestions : initialSuggestions;
 
   return (
     <div className="p-6">
@@ -31,7 +48,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe the landing page you want to create..."
+            placeholder={getPlaceholder()}
             className="w-full p-4 pr-16 min-h-40 border border-onyx-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-onyx-highlight focus:border-onyx-highlight transition-all text-sm bg-onyx-surface text-onyx-text-primary placeholder-onyx-text-disabled"
             disabled={isLoading}
             onKeyDown={(e) => {
@@ -42,8 +59,8 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
             }}
           />
             
-          {/* Quick Suggestions - Only show when no message and not in workspace */}
-          {/* {!message && (
+          {/* Quick Suggestions - Show different suggestions based on state */}
+          {/* {!message && !isLoading && (
             <div className="mt-3 flex flex-wrap gap-2">
               {suggestions.map((suggestion, index) => (
                 <button
@@ -58,6 +75,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
               ))}
             </div>
           )} */}
+
           {/* Conditionally render Send button only when there's a message */}
           {message.trim().length > 0 && (
             <button

@@ -2,30 +2,33 @@ import React from 'react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { WorkspaceInterface } from './WorkspaceInterface';
-import { Message } from '../types';
+import { Message, PageState, GeneratedFiles } from '../types';
 import biglogo from '../assets/biglogo.png';
 
 interface ChatInterfaceProps {
   messages: Message[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
-  pageState?: any;
+  pageState?: PageState;
   onRegenerateSection?: (sectionId: string) => void;
-  getComposedPage?: () => any;
+  getComposedPage?: () => GeneratedFiles;
+  currentLoadingMessageId?: string | null;
 }
 
-export function ChatInterface({ 
-  messages, 
-  isLoading, 
-  onSendMessage, 
-  pageState, 
+export function ChatInterface({
+  messages,
+  isLoading,
+  onSendMessage,
+  pageState,
   onRegenerateSection,
-  getComposedPage 
+  getComposedPage,
+  currentLoadingMessageId
 }: ChatInterfaceProps) {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];
   const hasGeneratedFiles = latestMessage?.type === 'assistant' && latestMessage.generatedFiles;
+  const hasGeneratedPage = messages.some(m => m.type === 'assistant' && m.generatedFiles);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,7 +49,11 @@ export function ChatInterface({
 
         {/* Chat input box */}
         <div className="w-full max-w-2xl">
-          <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+          <ChatInput 
+            onSendMessage={onSendMessage} 
+            isLoading={isLoading}
+            hasGeneratedPage={hasGeneratedPage}
+          />
         </div>
       </div>
     );
@@ -60,39 +67,43 @@ export function ChatInterface({
         <div className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6 bg-onyx-bg-primary">
             {messages.map((message) => (
-              <MessageBubble 
-                key={message.id} 
-                message={message} 
-                pageState={pageState}
+              <MessageBubble
+                key={message.id}
+                message={message}
+                pageState={message.id === currentLoadingMessageId ? pageState : undefined}
                 onRegenerateSection={onRegenerateSection}
               />
             ))}
-            {(isLoading || (pageState && (pageState.isPlanning || pageState.isGenerating))) && (
+            {/* Show loading indicator only if we don't have a specific message to update */}
+            {(isLoading && !currentLoadingMessageId) && (
               <div className="flex justify-start">
                 <div className="flex items-start gap-3 max-w-full w-full">
-                  {/* <div className="w-7 h-7 bg-onyx-text-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                  </div> */}
-                  {pageState ? (
-                    <MessageBubble 
-                      message={{
-                        id: 'generating',
-                        type: 'assistant',
-                        content: '',
-                        timestamp: new Date()
-                      }}
-                      pageState={pageState}
-                    />
-                  ) : (
-                    <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        <span className="ml-2 text-onyx-text-secondary text-sm">Generating your web application...</span>
-                      </div>
+                  <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-onyx-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <span className="ml-2 text-onyx-text-secondary text-sm">
+                        {hasGeneratedPage ? 'Processing your changes...' : 'Generating your web application...'}
+                      </span>
                     </div>
-                  )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Show current loading message if we have a specific message ID */}
+            {currentLoadingMessageId && !messages.some(m => m.id === currentLoadingMessageId) && (
+              <div className="flex justify-start">
+                <div className="flex items-start gap-3 max-w-full w-full">
+                  <MessageBubble
+                    message={{
+                      id: currentLoadingMessageId,
+                      type: 'assistant',
+                      content: '',
+                      timestamp: new Date()
+                    }}
+                    pageState={pageState}
+                  />
                 </div>
               </div>
             )}
@@ -101,7 +112,11 @@ export function ChatInterface({
         </div>
         
         <div className="flex-shrink-0 border-t border-onyx-border bg-onyx-bg-primary">
-          <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+          <ChatInput 
+            onSendMessage={onSendMessage} 
+            isLoading={isLoading}
+            hasGeneratedPage={hasGeneratedPage}
+          />
         </div>
       </div>
 

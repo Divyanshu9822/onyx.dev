@@ -1,11 +1,11 @@
 import React from 'react';
-import { User, Bot, Copy, FileText, Palette, Code, RefreshCw } from 'lucide-react';
-import { Message } from '../types';
+import { User, Bot, Copy, FileText, Palette, Code, RefreshCw, Edit3 } from 'lucide-react';
+import { Message, PageState } from '../types';
 import { GenerationProgress } from './GenerationProgress';
 
 interface MessageBubbleProps {
   message: Message;
-  pageState?: any;
+  pageState?: PageState;
   onRegenerateSection?: (sectionId: string) => void;
 }
 
@@ -40,21 +40,35 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
           <Bot className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          {/* Show generation progress if currently generating */}
-          {pageState && (pageState.isPlanning || pageState.isGenerating) ? (
+          {/* Show generation progress only for the current loading message */}
+          {pageState && (pageState.isPlanning || pageState.isGenerating || pageState.isEditing) ? (
             <GenerationProgress pageState={pageState} />
           ) : message.generatedFiles ? (
             <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 bg-onyx-accent rounded-full"></div>
-                  <span className="text-sm font-medium text-onyx-text-primary">Generated successfully</span>
+                  <span className="text-sm font-medium text-onyx-text-primary">
+                    {message.editResult ? 'Section updated successfully' : 'Generated successfully'}
+                  </span>
                 </div>
                 
-                {/* <p className="text-sm text-onyx-text-secondary mb-3">{message.content}</p> */}
+                {/* Edit Result Summary */}
+                {message.editResult && (
+                  <div className="bg-onyx-bg-primary border border-onyx-border rounded-lg p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Edit3 className="w-4 h-4 text-onyx-accent" />
+                      <h4 className="text-sm font-medium text-onyx-text-primary">Edit Applied</h4>
+                    </div>
+                    <div className="text-xs text-onyx-text-secondary">
+                      <p><strong>Section:</strong> {message.editResult.sectionName}</p>
+                      <p><strong>Change:</strong> {message.editResult.changeDescription}</p>
+                    </div>
+                  </div>
+                )}
                 
-                {/* Page Plan Summary */}
-                {message.pagePlan && (
+                {/* Page Plan Summary - Only show for initial generation */}
+                {message.pagePlan && !message.editResult && (
                   <div className="bg-onyx-bg-primary border border-onyx-border rounded-lg p-3 mb-3">
                     <h4 className="text-sm font-medium text-onyx-text-primary mb-2">Page Structure</h4>
                     <div className="grid grid-cols-2 gap-2">
@@ -81,7 +95,10 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
 
                 <div className="mt-3 p-3 bg-onyx-accent/10 border border-onyx-accent/30 rounded-lg">
                   <p className="text-xs text-onyx-text-primary">
-                    🎉 Your landing page is ready! Each section was generated individually for maximum customization. Switch to the preview or code view to see and edit your files.
+                    {message.editResult 
+                      ? '✨ Your changes have been applied! You can continue making edits by describing what you\'d like to change.'
+                      : '🎉 Your landing page is ready! Each section was generated individually for maximum customization. Switch to the preview or code view to see and edit your files.'
+                    }
                   </p>
                 </div>
 

@@ -5,6 +5,7 @@ export interface Message {
   timestamp: Date;
   generatedFiles?: GeneratedFiles;
   pagePlan?: PagePlan;
+  editResult?: EditResult;
 }
 
 export interface GeneratedFiles {
@@ -17,6 +18,7 @@ export interface ChatState {
   messages: Message[];
   isLoading: boolean;
   error: string | null;
+  currentLoadingMessageId: string | null;
 }
 
 export interface EditorFile {
@@ -77,9 +79,28 @@ export interface PageState {
   sections: Section[];
   isPlanning: boolean;
   isGenerating: boolean;
+  isEditing: boolean;
   generationProgress: {
     current: number;
     total: number;
     currentSection?: string;
+  };
+}
+
+// New types for edit functionality
+export interface EditResult {
+  sectionId: string;
+  sectionName: string;
+  changeDescription: string;
+}
+
+export interface EditRequest {
+  userPrompt: string;
+  targetSectionId: string;
+  sectionName: string;
+  originalContent: {
+    html: string;
+    css: string;
+    js: string;
   };
 }

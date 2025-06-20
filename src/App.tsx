@@ -5,7 +5,7 @@ import icon from './assets/icon.jpg';
 import bg from './assets/bg.png'; 
 
 function App() {
-  const { messages, isLoading, sendMessage, pageState, regenerateSection, getComposedPage } = useChat();
+  const { messages, isLoading, sendMessage, pageState, regenerateSection, getComposedPage, currentLoadingMessageId } = useChat();
   const hasMessages = messages.length > 0;
 
   const handleRegenerateSection = async (sectionId: string) => {
@@ -40,6 +40,7 @@ function App() {
           pageState={pageState}
           onRegenerateSection={handleRegenerateSection}
           getComposedPage={getComposedPage}
+          currentLoadingMessageId={currentLoadingMessageId}
         />
       </main>
     </div>
