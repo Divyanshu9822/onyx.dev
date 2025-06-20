@@ -57,7 +57,7 @@ export async function generatePagePlan(prompt: string): Promise<PagePlan> {
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-pro",
       systemInstruction: PLANNING_PROMPT,
       generationConfig: {
         responseMimeType: 'application/json',

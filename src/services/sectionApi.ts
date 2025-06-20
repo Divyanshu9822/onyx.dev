@@ -65,7 +65,7 @@ export async function generateSection(
 
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-2.5-pro",
       systemInstruction: SECTION_GENERATION_PROMPT,
       generationConfig: {
         responseMimeType: 'application/json',
