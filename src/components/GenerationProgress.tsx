@@ -58,7 +58,7 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
 
               {/* Section status list */}
               <div className="space-y-1">
-                {sections.filter(section => section.isGenerating || section.isGenerated).map((section) => (
+                {sections.filter(section => section.isInEditPlan).map((section) => (
                   <div key={section.id} className="flex items-center gap-2 text-xs">
                     {section.isGenerated ? (
                       <CheckCircle className="w-3 h-3 text-onyx-accent" />

@@ -249,9 +249,21 @@ export function usePageGeneration() {
         throw new Error('Could not identify any sections to edit. Please be more specific.');
       }
 
-      // Step 2: Update progress with total sections to edit
+      // Step 2: Mark sections that are part of the edit plan with a special flag
+      // and reset their status
       setPageState(prev => ({
         ...prev,
+        sections: prev.sections.map(section => {
+          const isInEditPlan = editPlan.sections.some(es => es.sectionId === section.id);
+          return {
+            ...section,
+            isInEditPlan: isInEditPlan,
+            // If in edit plan, reset generation status to prepare for editing
+            isGenerating: false,
+            // Keep isGenerated as is for sections not in the edit plan
+            isGenerated: isInEditPlan ? false : section.isGenerated
+          };
+        }),
         generationProgress: {
           current: 0,
           total: editPlan.sections.length,
@@ -264,8 +276,7 @@ export function usePageGeneration() {
         setPageState(prev => {
           // Count how many sections are already updated or failed
           const completedCount = prev.sections.filter(s =>
-            editPlan.sections.some(es => es.sectionId === s.id) &&
-            !s.isGenerating
+            s.isInEditPlan && (s.isGenerated || status === 'updated' && s.id === sectionId)
           ).length;
           
           return {
@@ -275,11 +286,12 @@ export function usePageGeneration() {
                 ? {
                     ...section,
                     isGenerating: status === 'editing',
+                    isGenerated: status === 'updated'
                   }
                 : section
             ),
             generationProgress: {
-              current: status !== 'editing' ? completedCount + 1 : completedCount,
+              current: completedCount,
               total: editPlan.sections.length,
               currentSection: status === 'editing' ?
                 prev.sections.find(s => s.id === sectionId)?.name || 'Editing...' :
@@ -303,10 +315,15 @@ export function usePageGeneration() {
               html: editedSection.html,
               css: editedSection.css,
               js: editedSection.js,
-              isGenerating: false
+              isGenerating: false,
+              isGenerated: true
             };
           }
-          return section;
+          // Reset the isInEditPlan flag for all sections
+          return {
+            ...section,
+            isInEditPlan: false
+          };
         }),
         isEditing: false,
         generationProgress: {
