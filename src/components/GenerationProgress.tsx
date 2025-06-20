@@ -33,13 +33,13 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
                   ? 'Planning your edits...'
                   : `Applying changes (${generationProgress.current}/${generationProgress.total})`}
               </p>
-              {generationProgress.currentSection && generationProgress.currentSection !== 'Planning edits...' && (
+              {/* {generationProgress.currentSection && generationProgress.currentSection !== 'Planning edits...' && (
                 <p className="text-xs text-onyx-text-secondary">
                   {generationProgress.currentSection === 'Planning complete'
                     ? 'Edit plan ready, applying changes...'
                     : `Currently updating: ${generationProgress.currentSection}`}
                 </p>
-              )}
+              )} */}
             </div>
           </div>
           
@@ -90,11 +90,11 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
               <p className="text-sm font-medium text-onyx-text-primary">
                 Generating sections ({generationProgress.current}/{generationProgress.total})
               </p>
-              {generationProgress.currentSection && (
+              {/* {generationProgress.currentSection && (
                 <p className="text-xs text-onyx-text-secondary">
                   Currently working on: {generationProgress.currentSection}
                 </p>
-              )}
+              )} */}
             </div>
           </div>
 
