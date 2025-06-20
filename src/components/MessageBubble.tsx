@@ -49,12 +49,12 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 bg-onyx-accent rounded-full"></div>
                   <span className="text-sm font-medium text-onyx-text-primary">
-                    {message.editResult ? 'Section updated successfully' : 'Generated successfully'}
+                  {message.editResult ? `${message.editResult.sectionName}${message.editResult.sectionName.endsWith('Section') ? '' : ' Section'} updated successfully` : 'Generated successfully'}
                   </span>
                 </div>
                 
                 {/* Edit Result Summary */}
-                {message.editResult && (
+                {/* {message.editResult && (
                   <div className="bg-onyx-bg-primary border border-onyx-border rounded-lg p-3 mb-3">
                     <div className="flex items-center gap-2 mb-2">
                       <Edit3 className="w-4 h-4 text-onyx-accent" />
@@ -65,7 +65,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                       <p><strong>Change:</strong> {message.editResult.changeDescription}</p>
                     </div>
                   </div>
-                )}
+                )} */}
                 
                 {/* Page Plan Summary - Only show for initial generation */}
                 {message.pagePlan && !message.editResult && (
