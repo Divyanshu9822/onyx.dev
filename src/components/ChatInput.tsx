@@ -25,21 +25,21 @@ export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }
     return "Describe the landing page you want to create...";
   };
 
-  const editSuggestions = [
-    "Add a student discount to the pricing section",
-    "Make the hero button gradient",
-    "Add a testimonial from a tech founder",
-    "Change the contact form to include a phone field"
-  ];
+  // const editSuggestions = [
+  //   "Add a student discount to the pricing section",
+  //   "Make the hero button gradient",
+  //   "Add a testimonial from a tech founder",
+  //   "Change the contact form to include a phone field"
+  // ];
 
-  const initialSuggestions = [
-    "A modern portfolio website with smooth animations",
-    "A SaaS landing page with pricing tiers and testimonials",
-    "A restaurant website with menu and online ordering",
-    "A fitness app dashboard with progress tracking"
-  ];
+  // const initialSuggestions = [
+  //   "A modern portfolio website with smooth animations",
+  //   "A SaaS landing page with pricing tiers and testimonials",
+  //   "A restaurant website with menu and online ordering",
+  //   "A fitness app dashboard with progress tracking"
+  // ];
 
-  const suggestions = hasGeneratedPage ? editSuggestions : initialSuggestions;
+  // const suggestions = hasGeneratedPage ? editSuggestions : initialSuggestions;
 
   return (
     <div className="p-6">
@@ -60,7 +60,7 @@ export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }
           />
             
           {/* Quick Suggestions - Show different suggestions based on state */}
-          {!message && !isLoading && (
+          {/* {!message && !isLoading && (
             <div className="mt-3 flex flex-wrap gap-2">
               {suggestions.map((suggestion, index) => (
                 <button
@@ -74,7 +74,7 @@ export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }
                 </button>
               ))}
             </div>
-          )}
+          )} */}
 
           {/* Conditionally render Send button only when there's a message */}
           {message.trim().length > 0 && (
