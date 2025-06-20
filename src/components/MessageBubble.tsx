@@ -103,7 +103,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                 </div>
 
                 {/* File Preview Cards - Compact */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   {[
                     { name: 'index.html', content: message.generatedFiles.html, icon: FileText, color: 'text-onyx-warning' },
                     { name: 'style.css', content: message.generatedFiles.css, icon: Palette, color: 'text-onyx-link' },
@@ -131,7 +131,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
             </div>
           ) : (
