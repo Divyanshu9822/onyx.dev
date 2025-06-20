@@ -24,12 +24,63 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
           </div>
         </div>
       ) : isEditing ? (
-        <div className="flex items-center gap-3">
-          <Edit3 className="w-5 h-5 text-onyx-primary animate-pulse" />
-          <div>
-            <p className="text-sm font-medium text-onyx-text-primary">Applying your changes...</p>
-            <p className="text-xs text-onyx-text-secondary">Identifying section and generating updates</p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Edit3 className="w-5 h-5 text-onyx-primary animate-pulse" />
+            <div>
+              <p className="text-sm font-medium text-onyx-text-primary">
+                {generationProgress.currentSection === 'Planning edits...'
+                  ? 'Planning your edits...'
+                  : `Applying changes (${generationProgress.current}/${generationProgress.total})`}
+              </p>
+              {generationProgress.currentSection && generationProgress.currentSection !== 'Planning edits...' && (
+                <p className="text-xs text-onyx-text-secondary">
+                  {generationProgress.currentSection === 'Planning complete'
+                    ? 'Edit plan ready, applying changes...'
+                    : `Currently updating: ${generationProgress.currentSection}`}
+                </p>
+              )}
+            </div>
           </div>
+          
+          {/* Only show progress bar and section list if we're past planning */}
+          {generationProgress.total > 0 && generationProgress.currentSection !== 'Planning edits...' && (
+            <>
+              {/* Progress bar */}
+              <div className="w-full bg-onyx-bg-secondary rounded-full h-2">
+                <div
+                  className="bg-onyx-primary h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(generationProgress.current / generationProgress.total) * 100}%`
+                  }}
+                />
+              </div>
+
+              {/* Section status list */}
+              <div className="space-y-1">
+                {sections.filter(section => section.isGenerating || section.isGenerated).map((section) => (
+                  <div key={section.id} className="flex items-center gap-2 text-xs">
+                    {section.isGenerated ? (
+                      <CheckCircle className="w-3 h-3 text-onyx-accent" />
+                    ) : section.isGenerating ? (
+                      <Loader2 className="w-3 h-3 animate-spin text-onyx-primary" />
+                    ) : (
+                      <Clock className="w-3 h-3 text-onyx-text-disabled" />
+                    )}
+                    <span className={`${
+                      section.isGenerated
+                        ? 'text-onyx-text-primary'
+                        : section.isGenerating
+                          ? 'text-onyx-primary font-medium'
+                          : 'text-onyx-text-disabled'
+                    }`}>
+                      {section.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -59,7 +110,7 @@ export function GenerationProgress({ pageState }: GenerationProgressProps) {
 
           {/* Section status list */}
           <div className="space-y-1">
-            {sections.map((section, index) => (
+            {sections.map((section) => (
               <div key={section.id} className="flex items-center gap-2 text-xs">
                 {section.isGenerated ? (
                   <CheckCircle className="w-3 h-3 text-onyx-accent" />

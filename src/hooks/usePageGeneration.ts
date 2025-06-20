@@ -3,7 +3,7 @@ import { PageState, PagePlan, Section, SectionPlan } from '../types';
 import { generatePagePlan } from '../services/planningApi';
 import { generateSection } from '../services/sectionApi';
 import { composePage } from '../services/pageComposer';
-import { identifyTargetSection, editSection } from '../services/editApi';
+import { planEdits, editSections } from '../services/editApi';
 
 // Configuration for parallel section generation
 const MAX_PARALLEL_CALLS = 4;
@@ -176,7 +176,7 @@ export function usePageGeneration() {
   }, []);
 
   const regenerateSection = useCallback(async (sectionId: string, originalPrompt: string) => {
-    const { plan, sections } = pageState;
+    const { plan } = pageState;
     if (!plan) return;
 
     const sectionPlan = plan.sections.find(s => s.id === sectionId);
@@ -232,60 +232,108 @@ export function usePageGeneration() {
     }
 
     try {
-      setPageState(prev => ({ ...prev, isEditing: true }));
+      setPageState(prev => ({
+        ...prev,
+        isEditing: true,
+        generationProgress: {
+          current: 0,
+          total: 0,
+          currentSection: 'Planning edits...'
+        }
+      }));
 
-      // Step 1: Identify which section to edit
-      const identification = await identifyTargetSection(userPrompt, plan);
-      const targetSection = sections.find(s => s.id === identification.sectionId);
+      // Step 1: Plan which sections to edit
+      const editPlan = await planEdits(userPrompt, plan);
       
-      if (!targetSection) {
-        throw new Error('Could not identify the section to edit. Please be more specific.');
+      if (editPlan.sections.length === 0) {
+        throw new Error('Could not identify any sections to edit. Please be more specific.');
       }
 
-      // Step 2: Mark section as generating
+      // Step 2: Update progress with total sections to edit
       setPageState(prev => ({
         ...prev,
-        sections: prev.sections.map(section => 
-          section.id === identification.sectionId 
-            ? { ...section, isGenerating: true }
-            : section
-        )
+        generationProgress: {
+          current: 0,
+          total: editPlan.sections.length,
+          currentSection: 'Planning complete'
+        }
       }));
 
-      // Step 3: Generate edited section
-      const editedCode = await editSection(userPrompt, targetSection, plan);
+      // Step 3: Create a progress update function
+      const updateProgress = (sectionId: string, status: 'editing' | 'updated' | 'failed') => {
+        setPageState(prev => {
+          // Count how many sections are already updated or failed
+          const completedCount = prev.sections.filter(s =>
+            editPlan.sections.some(es => es.sectionId === s.id) &&
+            !s.isGenerating
+          ).length;
+          
+          return {
+            ...prev,
+            sections: prev.sections.map(section =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    isGenerating: status === 'editing',
+                  }
+                : section
+            ),
+            generationProgress: {
+              current: status !== 'editing' ? completedCount + 1 : completedCount,
+              total: editPlan.sections.length,
+              currentSection: status === 'editing' ?
+                prev.sections.find(s => s.id === sectionId)?.name || 'Editing...' :
+                undefined
+            }
+          };
+        });
+      };
+
+      // Step 4: Edit all sections in parallel
+      const editResults = await editSections(userPrompt, plan, sections, updateProgress);
       
-      // Step 4: Update section with edited code
+      // Step 5: Update all sections with edited code
       setPageState(prev => ({
         ...prev,
-        sections: prev.sections.map(section => 
-          section.id === identification.sectionId 
-            ? { 
-                ...section, 
-                html: editedCode.html,
-                css: editedCode.css,
-                js: editedCode.js,
-                isGenerating: false
-              }
-            : section
-        ),
-        isEditing: false
+        sections: prev.sections.map(section => {
+          const editedSection = editResults.get(section.id);
+          if (editedSection) {
+            return {
+              ...section,
+              html: editedSection.html,
+              css: editedSection.css,
+              js: editedSection.js,
+              isGenerating: false
+            };
+          }
+          return section;
+        }),
+        isEditing: false,
+        generationProgress: {
+          current: editPlan.sections.length,
+          total: editPlan.sections.length
+        }
       }));
 
+      // Return information about the edited sections
       return {
-        sectionId: identification.sectionId,
-        sectionName: targetSection.name,
-        changeDescription: userPrompt
+        sectionId: editPlan.sections[0].sectionId, // For backward compatibility
+        sectionName: sections.find(s => s.id === editPlan.sections[0].sectionId)?.name || '',
+        changeDescription: editPlan.summary
       };
 
     } catch (error) {
-      console.error('Error editing section:', error);
+      console.error('Error editing sections:', error);
       setPageState(prev => ({
         ...prev,
         isEditing: false,
-        sections: prev.sections.map(section => 
+        sections: prev.sections.map(section =>
           ({ ...section, isGenerating: false })
-        )
+        ),
+        generationProgress: {
+          current: 0,
+          total: 0
+        }
       }));
       throw error;
     }
