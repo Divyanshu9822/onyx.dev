@@ -159,11 +159,11 @@ export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSect
           </div>
 
           {/* Section regeneration info */}
-          {pageState?.plan && (
+          {/* {pageState?.plan && (
             <div className="text-xs text-onyx-text-secondary">
               {pageState.sections.length} sections • Click sections in chat to regenerate
             </div>
-          )}
+          )} */}
         </div>
         
         <div className="flex items-center gap-3">
@@ -173,7 +173,6 @@ export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSect
             title="Open preview in new window"
           >
             <ExternalLink className="w-4 h-4" />
-            Pop Out
           </button>
           <button
             onClick={handleDownloadFiles}
@@ -192,7 +191,7 @@ export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSect
             ) : (
               <Globe className="w-4 h-4" />
             )}
-            {isDeploying ? 'Deploying...' : 'Deploy to Netlify'}
+            {isDeploying ? 'Deploying...' : 'Deploy'}
           </button>
         </div>
       </div>
@@ -290,7 +289,7 @@ export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSect
       {/* Content Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {viewMode === 'preview' ? (
-          <div className="h-full p-6 overflow-auto bg-onyx-bg-secondary">
+          <div className="h-full p-6 overflow-auto bg-onyx-bg-primary">
             <LivePreview files={files} />
           </div>
         ) : (

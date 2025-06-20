@@ -51,7 +51,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                   <span className="text-sm font-medium text-onyx-text-primary">Generated successfully</span>
                 </div>
                 
-                <p className="text-sm text-onyx-text-secondary mb-3">{message.content}</p>
+                {/* <p className="text-sm text-onyx-text-secondary mb-3">{message.content}</p> */}
                 
                 {/* Page Plan Summary */}
                 {message.pagePlan && (
@@ -78,7 +78,13 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                     </div>
                   </div>
                 )}
-                
+
+                <div className="mt-3 p-3 bg-onyx-accent/10 border border-onyx-accent/30 rounded-lg">
+                  <p className="text-xs text-onyx-text-primary">
+                    🎉 Your landing page is ready! Each section was generated individually for maximum customization. Switch to the preview or code view to see and edit your files.
+                  </p>
+                </div>
+
                 {/* File Preview Cards - Compact */}
                 <div className="space-y-2">
                   {[
@@ -108,12 +114,6 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                       </div>
                     </div>
                   ))}
-                </div>
-                
-                <div className="mt-3 p-3 bg-onyx-accent/10 border border-onyx-accent/30 rounded-lg">
-                  <p className="text-xs text-onyx-text-primary">
-                    🎉 Your landing page is ready! Each section was generated individually for maximum customization. Switch to the preview or code view to see and edit your files.
-                  </p>
                 </div>
               </div>
             </div>
