@@ -4,6 +4,9 @@ import { generatePagePlan } from '../services/planningApi';
 import { generateSection } from '../services/sectionApi';
 import { composePage } from '../services/pageComposer';
 
+// Configuration for parallel section generation
+const MAX_PARALLEL_CALLS = 3;
+
 export function usePageGeneration() {
   const [pageState, setPageState] = useState<PageState>({
     sections: [],
@@ -14,6 +17,100 @@ export function usePageGeneration() {
       total: 0
     }
   });
+
+  // Helper function to process sections in parallel with concurrency limit
+  const generateSectionsInParallel = async (
+    sectionPlans: SectionPlan[],
+    plan: PagePlan,
+    originalPrompt: string
+  ) => {
+    const results: { [key: string]: { html: string; css: string; js: string } } = {};
+    const errors: { [key: string]: Error } = {};
+    let completedCount = 0;
+
+    // Function to process a single section
+    const processSectionBatch = async (batch: SectionPlan[]) => {
+      const batchPromises = batch.map(async (sectionPlan) => {
+        try {
+          // Mark section as generating
+          setPageState(prev => ({
+            ...prev,
+            sections: prev.sections.map(section => 
+              section.id === sectionPlan.id 
+                ? { ...section, isGenerating: true }
+                : section
+            ),
+            generationProgress: {
+              ...prev.generationProgress,
+              currentSection: sectionPlan.name
+            }
+          }));
+
+          const sectionCode = await generateSection(sectionPlan, plan, originalPrompt);
+          results[sectionPlan.id] = sectionCode;
+          
+          completedCount++;
+          
+          // Update section with generated code
+          setPageState(prev => ({
+            ...prev,
+            sections: prev.sections.map(section => 
+              section.id === sectionPlan.id 
+                ? { 
+                    ...section, 
+                    html: sectionCode.html,
+                    css: sectionCode.css,
+                    js: sectionCode.js,
+                    isGenerated: true,
+                    isGenerating: false
+                  }
+                : section
+            ),
+            generationProgress: {
+              current: completedCount,
+              total: sectionPlans.length,
+              currentSection: completedCount < sectionPlans.length ? 'Generating...' : undefined
+            }
+          }));
+          
+        } catch (error) {
+          console.error(`Error generating section ${sectionPlan.name}:`, error);
+          errors[sectionPlan.id] = error instanceof Error ? error : new Error('Unknown error');
+          completedCount++;
+          
+          // Mark section as failed but continue with others
+          setPageState(prev => ({
+            ...prev,
+            sections: prev.sections.map(section => 
+              section.id === sectionPlan.id 
+                ? { 
+                    ...section, 
+                    html: `<section class="error-section"><h2>Failed to generate ${sectionPlan.name}</h2><p>Please try regenerating this section.</p></section>`,
+                    isGenerated: false,
+                    isGenerating: false
+                  }
+                : section
+            ),
+            generationProgress: {
+              current: completedCount,
+              total: sectionPlans.length,
+              currentSection: completedCount < sectionPlans.length ? 'Generating...' : undefined
+            }
+          }));
+        }
+      });
+
+      await Promise.all(batchPromises);
+    };
+
+    // Process sections in batches to respect concurrency limit
+    for (let i = 0; i < sectionPlans.length; i += MAX_PARALLEL_CALLS) {
+      const batch = sectionPlans.slice(i, i + MAX_PARALLEL_CALLS);
+      await processSectionBatch(batch);
+    }
+
+    return { results, errors };
+  };
 
   const generatePage = useCallback(async (prompt: string) => {
     try {
@@ -51,63 +148,8 @@ export function usePageGeneration() {
         }
       }));
 
-      // Step 3: Generate sections one by one
-      for (let i = 0; i < plan.sections.length; i++) {
-        const sectionPlan = plan.sections[i];
-        
-        // Mark current section as generating
-        setPageState(prev => ({
-          ...prev,
-          sections: prev.sections.map(section => 
-            section.id === sectionPlan.id 
-              ? { ...section, isGenerating: true }
-              : section
-          ),
-          generationProgress: {
-            current: i,
-            total: plan.sections.length,
-            currentSection: sectionPlan.name
-          }
-        }));
-
-        try {
-          const sectionCode = await generateSection(sectionPlan, plan, prompt);
-          
-          // Update section with generated code
-          setPageState(prev => ({
-            ...prev,
-            sections: prev.sections.map(section => 
-              section.id === sectionPlan.id 
-                ? { 
-                    ...section, 
-                    html: sectionCode.html,
-                    css: sectionCode.css,
-                    js: sectionCode.js,
-                    isGenerated: true,
-                    isGenerating: false
-                  }
-                : section
-            )
-          }));
-        } catch (error) {
-          console.error(`Error generating section ${sectionPlan.name}:`, error);
-          
-          // Mark section as failed but continue with others
-          setPageState(prev => ({
-            ...prev,
-            sections: prev.sections.map(section => 
-              section.id === sectionPlan.id 
-                ? { 
-                    ...section, 
-                    html: `<section class="error-section"><h2>Failed to generate ${sectionPlan.name}</h2><p>Please try regenerating this section.</p></section>`,
-                    isGenerated: false,
-                    isGenerating: false
-                  }
-                : section
-            )
-          }));
-        }
-      }
+      // Step 3: Generate all sections in parallel with concurrency control
+      await generateSectionsInParallel(plan.sections, plan, prompt);
 
       // Step 4: Complete generation
       setPageState(prev => ({
