@@ -50,58 +50,96 @@ IMPORTANT:
 - Ensure all section types are from the allowed list above
 - Make requirements specific and actionable`;
 
+// Maximum number of retries for failed API calls
+const MAX_RETRIES = 3;
+
+// Delay between retries (in milliseconds)
+const RETRY_DELAY_BASE = 1000; // 1 second base delay
+
+/**
+ * Generates a page plan with retry logic
+ */
 export async function generatePagePlan(prompt: string): Promise<PagePlan> {
   if (!GEMINI_API_KEY) {
     throw new Error('Please add your Gemini API key to the .env file. Get your API key from https://makersuite.google.com/app/apikey');
   }
 
-  try {
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-pro",
-      systemInstruction: PLANNING_PROMPT,
-      generationConfig: {
-        responseMimeType: 'application/json',
+  let retryCount = 0;
+  let lastError: Error | null = null;
+
+  while (retryCount <= MAX_RETRIES) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-pro",
+        systemInstruction: PLANNING_PROMPT,
+        generationConfig: {
+          responseMimeType: 'application/json',
+        }
+      });
+
+      const chat = model.startChat({
+        history: [],
+      });
+
+      const result = await chat.sendMessage(`Create a structural plan for this landing page: ${prompt}`);
+      const response = await result.response;
+      const responseText = response.text();
+      
+      const parsedResponse = JSON.parse(responseText);
+
+      if (!parsedResponse.title || !parsedResponse.sections || !Array.isArray(parsedResponse.sections)) {
+        throw new Error('Invalid planning response format');
       }
-    });
 
-    const chat = model.startChat({
-      history: [],
-    });
+      // Add IDs and order to sections
+      const sectionsWithIds: SectionPlan[] = parsedResponse.sections.map((section: {
+        type: string;
+        name: string;
+        description: string;
+        requirements?: string[];
+      }, index: number) => ({
+        id: `section-${Date.now()}-${index}`,
+        type: section.type as SectionType,
+        name: section.name,
+        description: section.description,
+        order: index,
+        requirements: section.requirements || []
+      }));
 
-    const result = await chat.sendMessage(`Create a structural plan for this landing page: ${prompt}`);
-    const response = await result.response;
-    const responseText = response.text();
-    
-    const parsedResponse = JSON.parse(responseText);
-
-    if (!parsedResponse.title || !parsedResponse.sections || !Array.isArray(parsedResponse.sections)) {
-      throw new Error('Invalid planning response format');
-    }
-
-    // Add IDs and order to sections
-    const sectionsWithIds: SectionPlan[] = parsedResponse.sections.map((section: any, index: number) => ({
-      id: `section-${Date.now()}-${index}`,
-      type: section.type as SectionType,
-      name: section.name,
-      description: section.description,
-      order: index,
-      requirements: section.requirements || []
-    }));
-
-    return {
-      id: `plan-${Date.now()}`,
-      title: parsedResponse.title,
-      description: parsedResponse.description,
-      sections: sectionsWithIds
-    };
-  } catch (error) {
-    console.error('Error generating page plan:', error);
-    if (error instanceof Error) {
-      if (error.message.includes('API key')) {
-        throw new Error('Invalid API key. Please check your Gemini API key in the .env file.');
+      return {
+        id: `plan-${Date.now()}`,
+        title: parsedResponse.title,
+        description: parsedResponse.description,
+        sections: sectionsWithIds
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      // Check if we should retry
+      if (retryCount < MAX_RETRIES) {
+        console.warn(`Error generating page plan (attempt ${retryCount + 1}/${MAX_RETRIES + 1}):`, error);
+        
+        // Calculate delay with exponential backoff
+        const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retryCount++;
+      } else {
+        // We've exhausted all retries
+        console.error(`Failed to generate page plan after ${MAX_RETRIES + 1} attempts:`, error);
+        
+        if (lastError.message.includes('API key')) {
+          throw new Error('Invalid API key. Please check your Gemini API key in the .env file.');
+        }
+        
+        // For the page plan, we need to throw an error as we can't proceed without it
+        throw lastError;
       }
-      throw error;
     }
-    throw new Error('Failed to generate page plan. Please try again.');
   }
+  
+  // This should never be reached due to the throw in the catch block
+  // but TypeScript needs it for type safety
+  throw new Error('Failed to generate page plan. Please try again.');
 }

@@ -42,10 +42,24 @@ export function useChat() {
           if (!pageState.isPlanning && !pageState.isGenerating) {
             const composedPage = getComposedPage();
             
+            // Get list of successfully generated sections
+            const generatedSections = pageState.sections.filter(s => s.isGenerated);
+            const failedSections = pageState.sections.filter(s => !s.isGenerated);
+            
+            // Create a more detailed success message
+            let successMessage = `✅ Page generated successfully!\n`;
+            successMessage += `Sections created: ${generatedSections.map(s => s.name).join(', ')}.\n`;
+            
+            // Add information about failed sections if any
+            if (failedSections.length > 0) {
+              successMessage += `\n⚠️ Some sections failed to generate: ${failedSections.map(s => s.name).join(', ')}.\n`;
+              successMessage += `You can try regenerating these sections individually.`;
+            }
+            
             const assistantMessage: Message = {
               id: (Date.now() + 1).toString(),
               type: 'assistant',
-              content: `I've created your landing page with ${pageState.sections.length} sections: ${pageState.sections.map(s => s.name).join(', ')}. Each section was carefully crafted to match your requirements.`,
+              content: successMessage,
               timestamp: new Date(),
               generatedFiles: composedPage,
               pagePlan: pageState.plan,
@@ -73,10 +87,15 @@ export function useChat() {
           if (!pageState.isEditing && !pageState.sections.some(s => s.isGenerating)) {
             const composedPage = getComposedPage();
             
+            // Create a more detailed edit success message
+            let editSuccessMessage = `✅ Changes applied successfully!\n`;
+            editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
+            editSuccessMessage += `The changes are now visible in the preview.`;
+            
             const assistantMessage: Message = {
               id: (Date.now() + 1).toString(),
               type: 'assistant',
-              content: `I've updated the ${editResult.sectionName} section based on your request: "${editResult.changeDescription}". The changes have been applied and are now visible in the preview.`,
+              content: editSuccessMessage,
               timestamp: new Date(),
               generatedFiles: composedPage,
               editResult: editResult,
