@@ -2,10 +2,10 @@ import React from 'react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { WorkspaceInterface } from './WorkspaceInterface';
-import { AuthModal } from './AuthModal';
+import { AuthModal } from './common/AuthModal';
 import { Message, PageState, GeneratedFiles } from '../types';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../store';
 import biglogo from '../assets/biglogo.png';
 
 interface ChatInterfaceProps {
@@ -30,7 +30,7 @@ export function ChatInterface({
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const [composedFiles, setComposedFiles] = useState<GeneratedFiles | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAppStore();
   
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];
@@ -109,14 +109,20 @@ export function ChatInterface({
         <div className="w-2/5 bg-onyx-surface border-r border-onyx-border flex flex-col">
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6 bg-onyx-bg-primary">
-              {messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  pageState={message.id === currentLoadingMessageId ? pageState : undefined}
-                  onRegenerateSection={onRegenerateSection}
-                />
-              ))}
+              {messages.map((message, index) => {
+                // For edit flows, show pageState on the last assistant message if we're loading
+                const shouldShowPageState = message.id === currentLoadingMessageId ||
+                  (isLoading && message.type === 'assistant' && index === messages.length - 1);
+                
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    pageState={shouldShowPageState ? pageState : undefined}
+                    onRegenerateSection={onRegenerateSection}
+                  />
+                );
+              })}
               {/* Show loading indicator only if we don't have a specific message to update */}
               {(isLoading && !currentLoadingMessageId) && (
                 <div className="flex justify-start">

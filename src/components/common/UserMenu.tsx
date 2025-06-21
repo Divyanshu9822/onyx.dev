@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { User, LogOut, ChevronDown } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../../store';
 
 export function UserMenu() {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useAppStore();
   const [isOpen, setIsOpen] = useState(false);
 
   if (!user) return null;

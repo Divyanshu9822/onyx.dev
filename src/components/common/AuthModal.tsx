@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Github, Loader2 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../../store';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -8,7 +8,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { signInWithGitHub } = useAuth();
+  const { signInWithGitHub } = useAppStore();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleGitHubSignIn = async () => {

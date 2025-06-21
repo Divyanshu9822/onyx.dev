@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { PageState, PagePlan, Section, SectionPlan } from '../types';
+import { PageState, PagePlan, Section, SectionPlan, SectionType } from '../types';
 import { generatePagePlan } from '../services/planningApi';
 import { generateSection } from '../services/sectionApi';
 import { composePage } from '../services/pageComposer';
@@ -375,6 +375,58 @@ export function usePageGeneration() {
     return pageState.sections.length > 0 && pageState.sections.some(s => s.isGenerated);
   }, [pageState.sections]);
 
+  const restorePageStateFromFiles = useCallback((files: { html: string; css: string; js: string }, pagePlan?: PagePlan) => {
+    console.log('Restoring page state from files:', { hasFiles: !!(files.html || files.css || files.js), pagePlan: !!pagePlan });
+    
+    if (files.html || files.css || files.js) {
+      let restoredSections: Section[] = [];
+      
+      if (pagePlan && pagePlan.sections) {
+        // If we have a plan, create sections based on the plan structure
+        // This is essential for the edit system to work properly
+        restoredSections = pagePlan.sections.map(sectionPlan => ({
+          id: sectionPlan.id,
+          type: sectionPlan.type,
+          name: sectionPlan.name,
+          html: '', // We don't have individual section HTML, but that's ok for edit detection
+          css: '',
+          js: '',
+          isGenerated: true,
+          isGenerating: false
+        }));
+        
+        console.log('Page state restored with plan-based sections:', restoredSections.length);
+      } else {
+        // Fallback: create a single mock section if no plan is available
+        restoredSections = [{
+          id: 'restored-section',
+          type: 'hero' as SectionType,
+          name: 'Restored Content',
+          html: files.html || '',
+          css: files.css || '',
+          js: files.js || '',
+          isGenerated: true,
+          isGenerating: false
+        }];
+        
+        console.log('Page state restored with fallback mock section');
+      }
+      
+      setPageState(prev => ({
+        ...prev,
+        sections: restoredSections,
+        plan: pagePlan,
+        isPlanning: false,
+        isGenerating: false,
+        isEditing: false,
+        generationProgress: {
+          current: restoredSections.length,
+          total: restoredSections.length
+        }
+      }));
+    }
+  }, []);
+
   return {
     pageState,
     generatePage,
@@ -382,6 +434,7 @@ export function usePageGeneration() {
     editSectionByPrompt,
     updateSection,
     getComposedPage,
-    hasGeneratedPage
+    hasGeneratedPage,
+    restorePageStateFromFiles
   };
 }
