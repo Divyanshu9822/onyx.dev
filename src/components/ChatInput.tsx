@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { Send, Loader2, Sparkles } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
   hasGeneratedPage?: boolean;
+  onAuthRequired?: () => void;
 }
 
-export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }: ChatInputProps) {
+export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false, onAuthRequired }: ChatInputProps) {
   const [message, setMessage] = useState('');
+  const { isAuthenticated } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
+      // Check if user is authenticated before proceeding
+      if (!isAuthenticated) {
+        onAuthRequired?.();
+        return;
+      }
+      
       onSendMessage(message.trim());
       setMessage('');
     }
@@ -24,22 +33,6 @@ export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }
     }
     return "Describe the landing page you want to create...";
   };
-
-  // const editSuggestions = [
-  //   "Add a student discount to the pricing section",
-  //   "Make the hero button gradient",
-  //   "Add a testimonial from a tech founder",
-  //   "Change the contact form to include a phone field"
-  // ];
-
-  // const initialSuggestions = [
-  //   "A modern portfolio website with smooth animations",
-  //   "A SaaS landing page with pricing tiers and testimonials",
-  //   "A restaurant website with menu and online ordering",
-  //   "A fitness app dashboard with progress tracking"
-  // ];
-
-  // const suggestions = hasGeneratedPage ? editSuggestions : initialSuggestions;
 
   return (
     <div className="p-6">
@@ -58,23 +51,6 @@ export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false }
               }
             }}
           />
-            
-          {/* Quick Suggestions - Show different suggestions based on state */}
-          {/* {!message && !isLoading && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setMessage(suggestion)}
-                  className="text-xs px-3 py-1.5 bg-onyx-bg-secondary text-onyx-text-secondary rounded-full hover:bg-onyx-border transition-colors flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )} */}
 
           {/* Conditionally render Send button only when there's a message */}
           {message.trim().length > 0 && (
