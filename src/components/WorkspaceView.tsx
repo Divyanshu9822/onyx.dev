@@ -48,7 +48,7 @@ export function WorkspaceView() {
                 html: project.html,
                 css: project.css,
                 js: project.js
-              });
+              }, project.plan);
             }
             setIsLoadingProject(false);
           }

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Message, ChatState } from '../types';
+import { Message, ChatState, PagePlan } from '../types';
 import { usePageGeneration } from './usePageGeneration';
 import { useProject } from './useProject';
 import { useProjectFlow } from './useProjectFlow';
@@ -12,41 +12,45 @@ export function useChat() {
     currentLoadingMessageId: null,
   });
 
-  const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage } = usePageGeneration();
+  const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage, restorePageStateFromFiles } = usePageGeneration();
   const { updateProject, currentProject } = useProject();
   const { handlePromptSubmission } = useProjectFlow();
 
   // Handle completion of generation for startGenerationWithPrompt
   useEffect(() => {
     // Only handle completion if we're in loading state and generation is complete
+    // This useEffect is specifically for startGenerationWithPrompt flow
     if (state.isLoading && state.currentLoadingMessageId && !pageState.isPlanning && !pageState.isGenerating && pageState.sections.length > 0) {
+      console.log('useEffect: Handling generation completion for startGenerationWithPrompt');
+      
       const handleGenerationComplete = async () => {
         try {
+          console.log('useEffect: Fetching composed page...');
           const composedPage = await getComposedPage();
           
           // Update project in database - get project ID from URL if currentProject is not available
           try {
-            console.log('Attempting to update project with composed page:', { currentProject: !!currentProject });
+            console.log('useEffect: Attempting to update project with composed page:', { currentProject: !!currentProject });
             if (currentProject) {
-              console.log('Updating project:', currentProject.id);
-              await updateProject(composedPage);
-              console.log('Project updated successfully');
+              console.log('useEffect: Updating project:', currentProject.id);
+              await updateProject(composedPage, pageState.plan);
+              console.log('useEffect: Project updated successfully');
             } else {
               // Try to get project ID from URL as fallback
               const pathParts = window.location.pathname.split('/');
               const projectId = pathParts[2]; // /project/:id
               if (projectId) {
-                console.log('Updating project using URL ID:', projectId);
+                console.log('useEffect: Updating project using URL ID:', projectId);
                 // Import ProjectService directly for this fallback
                 const { ProjectService } = await import('../services/projectService');
-                await ProjectService.updateProject(projectId, composedPage);
-                console.log('Project updated successfully via fallback');
+                await ProjectService.updateProject(projectId, composedPage, pageState.plan);
+                console.log('useEffect: Project updated successfully via fallback');
               } else {
-                console.warn('No project ID available for update');
+                console.warn('useEffect: No project ID available for update');
               }
             }
           } catch (saveError) {
-            console.error('Failed to update project:', saveError);
+            console.error('useEffect: Failed to update project:', saveError);
             // Continue with UI update even if save fails
           }
           
@@ -80,7 +84,7 @@ export function useChat() {
             currentLoadingMessageId: null,
           }));
         } catch (error) {
-          console.error('Error getting composed page:', error);
+          console.error('useEffect: Error getting composed page:', error);
           setState(prev => ({
             ...prev,
             isLoading: false,
@@ -121,33 +125,56 @@ export function useChat() {
       
       // Determine if this is an initial generation or an edit
       const isInitialGeneration = !hasGeneratedPage();
+      
+      console.log('Chat flow decision:', {
+        isInitialGeneration,
+        hasGeneratedPage: hasGeneratedPage(),
+        sectionsCount: pageState?.sections?.length || 0,
+        isOnHomePage
+      });
 
       if (isInitialGeneration) {
         // Initial page generation
+        console.log('Starting initial page generation for:', content);
         await generatePage(content);
         
         // Wait for generation to complete
         const checkCompletion = () => {
+          console.log('Checking generation completion:', {
+            isPlanning: pageState.isPlanning,
+            isGenerating: pageState.isGenerating,
+            sectionsCount: pageState.sections.length,
+            generatedSections: pageState.sections.filter(s => s.isGenerated).length
+          });
+          
           if (!pageState.isPlanning && !pageState.isGenerating) {
             const fetchComposedPage = async () => {
               try {
+                console.log('Fetching composed page after generation...');
                 const composedPage = await getComposedPage();
+                console.log('Composed page fetched, updating database...');
                 
                 // Update project in database (project already exists from handlePromptSubmission)
                 try {
                   if (currentProject) {
-                    await updateProject(composedPage);
+                    console.log('Updating project via currentProject:', currentProject.id);
+                    await updateProject(composedPage, pageState.plan);
+                    console.log('Project updated successfully via currentProject');
                   } else {
                     // Try to get project ID from URL as fallback
                     const pathParts = window.location.pathname.split('/');
                     const projectId = pathParts[2]; // /project/:id
                     if (projectId) {
+                      console.log('Updating project via URL fallback:', projectId);
                       const { ProjectService } = await import('../services/projectService');
-                      await ProjectService.updateProject(projectId, composedPage);
+                      await ProjectService.updateProject(projectId, composedPage, pageState.plan);
+                      console.log('Project updated successfully via URL fallback');
+                    } else {
+                      console.warn('No project ID available for update');
                     }
                   }
                 } catch (saveError) {
-                  console.warn('Failed to update project:', saveError);
+                  console.error('Failed to update project:', saveError);
                   // Continue with UI update even if save fails
                 }
                 
@@ -201,72 +228,93 @@ export function useChat() {
         checkCompletion();
       } else {
         // Edit existing page
-        const editResult = await editSectionByPrompt(content);
+        console.log('Starting edit flow for:', content);
         
-        // Wait for edit to complete
-        const checkEditCompletion = () => {
-          if (!pageState.isEditing && !pageState.sections.some(s => s.isGenerating)) {
-            const fetchComposedPage = async () => {
-              try {
-                const composedPage = await getComposedPage();
-                
-                // Update project in database
-                try {
-                  if (currentProject) {
-                    await updateProject(composedPage);
-                  } else {
-                    // Try to get project ID from URL as fallback
-                    const pathParts = window.location.pathname.split('/');
-                    const projectId = pathParts[2]; // /project/:id
-                    if (projectId) {
-                      const { ProjectService } = await import('../services/projectService');
-                      await ProjectService.updateProject(projectId, composedPage);
-                    }
-                  }
-                } catch (saveError) {
-                  console.warn('Failed to update project:', saveError);
-                  // Continue with UI update even if save fails
-                }
-                
-                // Create a more detailed edit success message
-                let editSuccessMessage = `✅ Changes applied successfully!\n`;
-                editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
-                editSuccessMessage += `The changes are now visible in the preview.`;
-                
-                const assistantMessage: Message = {
-                  id: (Date.now() + 1).toString(),
-                  type: 'assistant',
-                  content: editSuccessMessage,
-                  timestamp: new Date(),
-                  generatedFiles: composedPage,
-                  editResult: editResult,
-                };
-
-                setState(prev => ({
-                  ...prev,
-                  messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
-                  isLoading: false,
-                  currentLoadingMessageId: null,
-                }));
-              } catch (error) {
-                console.error('Error getting composed page after edit:', error);
-                setState(prev => ({
-                  ...prev,
-                  isLoading: false,
-                  currentLoadingMessageId: null,
-                  error: 'Failed to format page content after edit'
-                }));
-              }
-            };
+        try {
+          const editResult = await editSectionByPrompt(content);
+          console.log('Edit result:', editResult);
+          
+          // Wait for edit to complete
+          const checkEditCompletion = () => {
+            console.log('Checking edit completion:', {
+              isEditing: pageState.isEditing,
+              sectionsGenerating: pageState.sections.filter(s => s.isGenerating).length
+            });
             
-            fetchComposedPage();
-          } else {
-            // Check again in 500ms
-            setTimeout(checkEditCompletion, 500);
-          }
-        };
+            if (!pageState.isEditing && !pageState.sections.some(s => s.isGenerating)) {
+              const fetchComposedPage = async () => {
+                try {
+                  console.log('Fetching composed page after edit...');
+                  const composedPage = await getComposedPage();
+                  console.log('Composed page fetched, updating database...');
+                  
+                  // Update project in database
+                  try {
+                    if (currentProject) {
+                      console.log('Updating project via currentProject:', currentProject.id);
+                      await updateProject(composedPage, pageState.plan);
+                      console.log('Project updated successfully via currentProject');
+                    } else {
+                      // Try to get project ID from URL as fallback
+                      const pathParts = window.location.pathname.split('/');
+                      const projectId = pathParts[2]; // /project/:id
+                      if (projectId) {
+                        console.log('Updating project via URL fallback:', projectId);
+                        const { ProjectService } = await import('../services/projectService');
+                        await ProjectService.updateProject(projectId, composedPage, pageState.plan);
+                        console.log('Project updated successfully via URL fallback');
+                      } else {
+                        console.warn('No project ID available for update');
+                      }
+                    }
+                  } catch (saveError) {
+                    console.error('Failed to update project:', saveError);
+                    // Continue with UI update even if save fails
+                  }
+                  
+                  // Create a more detailed edit success message
+                  let editSuccessMessage = `✅ Changes applied successfully!\n`;
+                  editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
+                  editSuccessMessage += `The changes are now visible in the preview.`;
+                  
+                  const assistantMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    type: 'assistant',
+                    content: editSuccessMessage,
+                    timestamp: new Date(),
+                    generatedFiles: composedPage,
+                    editResult: editResult,
+                  };
 
-        checkEditCompletion();
+                  setState(prev => ({
+                    ...prev,
+                    messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
+                    isLoading: false,
+                    currentLoadingMessageId: null,
+                  }));
+                } catch (error) {
+                  console.error('Error getting composed page after edit:', error);
+                  setState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                    currentLoadingMessageId: null,
+                    error: 'Failed to format page content after edit'
+                  }));
+                }
+              };
+              
+              fetchComposedPage();
+            } else {
+              // Check again in 500ms
+              setTimeout(checkEditCompletion, 500);
+            }
+          };
+
+          checkEditCompletion();
+        } catch (editError) {
+          console.error('Error in edit flow:', editError);
+          throw editError;
+        }
       }
       
     } catch (error) {
@@ -287,7 +335,9 @@ export function useChat() {
     }
   }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage, handlePromptSubmission, updateProject, currentProject]);
 
-  const loadProjectIntoChat = useCallback((prompt: string, files: { html: string; css: string; js: string }) => {
+  const loadProjectIntoChat = useCallback((prompt: string, files: { html: string; css: string; js: string }, pagePlan?: PagePlan) => {
+    console.log('Loading project into chat:', { prompt, hasFiles: !!(files.html || files.css || files.js), pagePlan: !!pagePlan });
+    
     // Clear current state
     setState({
       messages: [],
@@ -298,6 +348,9 @@ export function useChat() {
 
     // Only show messages if there are actual files (not empty project)
     if (files.html || files.css || files.js) {
+      // Restore page state so that hasGeneratedPage() returns true
+      restorePageStateFromFiles(files, pagePlan);
+      
       // Create initial messages to show the project was loaded
       const userMessage: Message = {
         id: Date.now().toString(),
@@ -312,6 +365,7 @@ export function useChat() {
         content: '✅ Project loaded successfully! You can continue editing or make changes to your landing page.',
         timestamp: new Date(),
         generatedFiles: files,
+        pagePlan: pagePlan,
       };
 
       setState({
@@ -321,7 +375,7 @@ export function useChat() {
         currentLoadingMessageId: null,
       });
     }
-  }, []);
+  }, [restorePageStateFromFiles]);
 
   const clearChat = useCallback(() => {
     setState({

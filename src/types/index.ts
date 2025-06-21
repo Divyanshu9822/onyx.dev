@@ -114,6 +114,7 @@ export interface Project {
   html: string;
   css: string;
   js: string;
+  plan?: PagePlan;
   created_at: string;
   updated_at: string;
 }
