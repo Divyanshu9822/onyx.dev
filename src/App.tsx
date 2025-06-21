@@ -15,7 +15,7 @@ import bg from './assets/bg.png';
 function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { messages, isLoading, sendMessage, pageState, regenerateSection, getComposedPage, currentLoadingMessageId, loadProjectIntoChat, clearChat } = useChat();
-  const { currentProject, loadProject, startNewChat } = useProject();
+  const { loadProject } = useProject();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -67,7 +67,7 @@ function ProjectPage() {
 
   const handleNewChat = () => {
     clearChat();
-    startNewChat();
+    navigate('/');
     setSidebarVisible(false);
   };
 
@@ -170,7 +170,6 @@ function ProjectPage() {
 
 function HomePage() {
   const { messages, isLoading, sendMessage, pageState, regenerateSection, getComposedPage, currentLoadingMessageId, clearChat } = useChat();
-  const { startNewChat } = useProject();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
@@ -195,7 +194,7 @@ function HomePage() {
 
   const handleNewChat = () => {
     clearChat();
-    startNewChat();
+    navigate('/');
     setSidebarVisible(false);
   };
 

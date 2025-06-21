@@ -5,7 +5,7 @@ export class ProjectService {
   /**
    * Creates a new project in the database
    */
-  static async createProject(prompt: string, files: GeneratedFiles): Promise<Project> {
+  static async createProject(prompt: string, files?: GeneratedFiles): Promise<Project> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -17,9 +17,9 @@ export class ProjectService {
       .insert({
         user_id: user.id,
         prompt,
-        html: files.html,
-        css: files.css,
-        js: files.js
+        html: files?.html || '',
+        css: files?.css || '',
+        js: files?.js || ''
       })
       .select()
       .single();

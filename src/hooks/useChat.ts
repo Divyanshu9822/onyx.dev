@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Message, ChatState } from '../types';
 import { usePageGeneration } from './usePageGeneration';
 import { useProject } from './useProject';
+import { useProjectFlow } from './useProjectFlow';
 
 export function useChat() {
   const [state, setState] = useState<ChatState>({
@@ -12,7 +13,8 @@ export function useChat() {
   });
 
   const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage } = usePageGeneration();
-  const { createNewProject, updateProject, currentProject } = useProject();
+  const { updateProject, currentProject } = useProject();
+  const { handlePromptSubmission } = useProjectFlow();
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
@@ -32,6 +34,9 @@ export function useChat() {
     }));
 
     try {
+      // Handle project creation/routing first if needed
+      await handlePromptSubmission(content);
+      
       // Determine if this is an initial generation or an edit
       const isInitialGeneration = !hasGeneratedPage();
 
@@ -46,15 +51,13 @@ export function useChat() {
               try {
                 const composedPage = await getComposedPage();
                 
-                // Save to database if user is authenticated
+                // Update project in database (project already exists from handlePromptSubmission)
                 try {
-                  if (!currentProject) {
-                    await createNewProject(content, composedPage);
-                  } else {
+                  if (currentProject) {
                     await updateProject(composedPage);
                   }
                 } catch (saveError) {
-                  console.warn('Failed to save project:', saveError);
+                  console.warn('Failed to update project:', saveError);
                   // Continue with UI update even if save fails
                 }
                 
@@ -184,7 +187,7 @@ export function useChat() {
         currentLoadingMessageId: null,
       }));
     }
-  }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage, createNewProject, updateProject, currentProject]);
+  }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage, handlePromptSubmission, updateProject, currentProject]);
 
   const loadProjectIntoChat = useCallback((prompt: string, files: { html: string; css: string; js: string }) => {
     // Clear current state
@@ -195,28 +198,31 @@ export function useChat() {
       currentLoadingMessageId: null,
     });
 
-    // Create initial messages to show the project was loaded
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: prompt,
-      timestamp: new Date(),
-    };
+    // Only show messages if there are actual files (not empty project)
+    if (files.html || files.css || files.js) {
+      // Create initial messages to show the project was loaded
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: prompt,
+        timestamp: new Date(),
+      };
 
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      type: 'assistant',
-      content: '✅ Project loaded successfully! You can continue editing or make changes to your landing page.',
-      timestamp: new Date(),
-      generatedFiles: files,
-    };
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: '✅ Project loaded successfully! You can continue editing or make changes to your landing page.',
+        timestamp: new Date(),
+        generatedFiles: files,
+      };
 
-    setState({
-      messages: [userMessage, assistantMessage],
-      isLoading: false,
-      error: null,
-      currentLoadingMessageId: null,
-    });
+      setState({
+        messages: [userMessage, assistantMessage],
+        isLoading: false,
+        error: null,
+        currentLoadingMessageId: null,
+      });
+    }
   }, []);
 
   const clearChat = useCallback(() => {

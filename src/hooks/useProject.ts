@@ -11,7 +11,7 @@ export function useProject() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const createNewProject = useCallback(async (prompt: string, files: GeneratedFiles) => {
+  const createNewProject = useCallback(async (prompt: string, files?: GeneratedFiles) => {
     if (!isAuthenticated) {
       throw new Error('User must be authenticated to create a project');
     }
