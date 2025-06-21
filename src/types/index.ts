@@ -105,3 +105,21 @@ export interface EditRequest {
     js: string;
   };
 }
+
+// New types for project management
+export interface Project {
+  id: string;
+  user_id: string;
+  prompt: string;
+  html: string;
+  css: string;
+  js: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProjectSummary {
+  id: string;
+  prompt: string;
+  created_at: string;
+}

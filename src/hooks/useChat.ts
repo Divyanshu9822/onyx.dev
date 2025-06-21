@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Message, ChatState } from '../types';
 import { usePageGeneration } from './usePageGeneration';
+import { useProject } from './useProject';
 
 export function useChat() {
   const [state, setState] = useState<ChatState>({
@@ -11,6 +12,7 @@ export function useChat() {
   });
 
   const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage } = usePageGeneration();
+  const { createNewProject, updateProject, currentProject } = useProject();
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
@@ -43,6 +45,18 @@ export function useChat() {
             const fetchComposedPage = async () => {
               try {
                 const composedPage = await getComposedPage();
+                
+                // Save to database if user is authenticated
+                try {
+                  if (!currentProject) {
+                    await createNewProject(content, composedPage);
+                  } else {
+                    await updateProject(composedPage);
+                  }
+                } catch (saveError) {
+                  console.warn('Failed to save project:', saveError);
+                  // Continue with UI update even if save fails
+                }
                 
                 // Get list of successfully generated sections
                 const generatedSections = pageState.sections.filter(s => s.isGenerated);
@@ -103,6 +117,16 @@ export function useChat() {
               try {
                 const composedPage = await getComposedPage();
                 
+                // Update project in database
+                try {
+                  if (currentProject) {
+                    await updateProject(composedPage);
+                  }
+                } catch (saveError) {
+                  console.warn('Failed to update project:', saveError);
+                  // Continue with UI update even if save fails
+                }
+                
                 // Create a more detailed edit success message
                 let editSuccessMessage = `✅ Changes applied successfully!\n`;
                 editSuccessMessage += `Updated the "${editResult.sectionName}" section based on your request: "${editResult.changeDescription}".\n`;
@@ -160,11 +184,55 @@ export function useChat() {
         currentLoadingMessageId: null,
       }));
     }
-  }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage]);
+  }, [generatePage, editSectionByPrompt, pageState, getComposedPage, hasGeneratedPage, createNewProject, updateProject, currentProject]);
+
+  const loadProjectIntoChat = useCallback((prompt: string, files: { html: string; css: string; js: string }) => {
+    // Clear current state
+    setState({
+      messages: [],
+      isLoading: false,
+      error: null,
+      currentLoadingMessageId: null,
+    });
+
+    // Create initial messages to show the project was loaded
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: prompt,
+      timestamp: new Date(),
+    };
+
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      type: 'assistant',
+      content: '✅ Project loaded successfully! You can continue editing or make changes to your landing page.',
+      timestamp: new Date(),
+      generatedFiles: files,
+    };
+
+    setState({
+      messages: [userMessage, assistantMessage],
+      isLoading: false,
+      error: null,
+      currentLoadingMessageId: null,
+    });
+  }, []);
+
+  const clearChat = useCallback(() => {
+    setState({
+      messages: [],
+      isLoading: false,
+      error: null,
+      currentLoadingMessageId: null,
+    });
+  }, []);
 
   return {
     ...state,
     sendMessage,
+    loadProjectIntoChat,
+    clearChat,
     pageState,
     regenerateSection,
     getComposedPage,
