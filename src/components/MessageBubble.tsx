@@ -43,6 +43,10 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
           {/* Show generation progress only for the current loading message */}
           {pageState && (pageState.isPlanning || pageState.isGenerating || pageState.isEditing) ? (
             <GenerationProgress pageState={pageState} />
+          ) : message.content && !message.generatedFiles ? (
+            <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
+              <p className="text-sm text-onyx-text-secondary whitespace-pre-wrap">{message.content}</p>
+            </div>
           ) : message.generatedFiles ? (
             <div className="bg-onyx-surface p-4 rounded-2xl rounded-tl-md shadow-sm border border-onyx-border">
               <div className="space-y-3">
@@ -78,7 +82,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                             {index + 1}
                           </span>
                           <span className="text-onyx-text-secondary">{section.name}</span>
-                          {onRegenerateSection && (
+                          {/* {onRegenerateSection && (
                             <button
                               onClick={() => onRegenerateSection(section.id)}
                               className="ml-auto p-1 hover:bg-onyx-bg-secondary rounded text-onyx-text-disabled hover:text-onyx-text-secondary"
@@ -86,7 +90,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                             >
                               <RefreshCw className="w-3 h-3" />
                             </button>
-                          )}
+                          )} */}
                         </div>
                       ))}
                     </div>

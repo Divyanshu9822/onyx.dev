@@ -1,11 +1,11 @@
 import { supabase } from '../lib/supabase';
-import { Project, ProjectSummary, GeneratedFiles } from '../types';
+import { Project, ProjectSummary, GeneratedFiles, PagePlan } from '../types';
 
 export class ProjectService {
   /**
    * Creates a new project in the database
    */
-  static async createProject(prompt: string, files?: GeneratedFiles): Promise<Project> {
+  static async createProject(prompt: string, files?: GeneratedFiles, plan?: PagePlan): Promise<Project> {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -19,7 +19,8 @@ export class ProjectService {
         prompt,
         html: files?.html || '',
         css: files?.css || '',
-        js: files?.js || ''
+        js: files?.js || '',
+        plan: plan || null
       })
       .select()
       .single();
@@ -35,15 +36,28 @@ export class ProjectService {
   /**
    * Updates an existing project
    */
-  static async updateProject(projectId: string, files: GeneratedFiles): Promise<Project> {
+  static async updateProject(projectId: string, files: GeneratedFiles, plan?: PagePlan): Promise<Project> {
+    const updateData: {
+      html: string;
+      css: string;
+      js: string;
+      updated_at: string;
+      plan?: PagePlan;
+    } = {
+      html: files.html,
+      css: files.css,
+      js: files.js,
+      updated_at: new Date().toISOString()
+    };
+
+    // Only update plan if provided
+    if (plan) {
+      updateData.plan = plan;
+    }
+
     const { data, error } = await supabase
       .from('projects')
-      .update({
-        html: files.html,
-        css: files.css,
-        js: files.js,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', projectId)
       .select()
       .single();

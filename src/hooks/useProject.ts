@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProjectService } from '../services/projectService';
-import { Project, GeneratedFiles } from '../types';
+import { Project, GeneratedFiles, PagePlan } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useProject() {
@@ -53,7 +53,7 @@ export function useProject() {
     }
   }, []);
 
-  const updateProject = useCallback(async (files: GeneratedFiles) => {
+  const updateProject = useCallback(async (files: GeneratedFiles, plan?: PagePlan) => {
     if (!currentProject) {
       throw new Error('No current project to update');
     }
@@ -62,7 +62,7 @@ export function useProject() {
     setError(null);
     
     try {
-      const updatedProject = await ProjectService.updateProject(currentProject.id, files);
+      const updatedProject = await ProjectService.updateProject(currentProject.id, files, plan);
       setCurrentProject(updatedProject);
       return updatedProject;
     } catch (err) {
