@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Message, ChatState } from '../types';
 import { usePageGeneration } from './usePageGeneration';
 import { useProject } from './useProject';
@@ -15,6 +15,84 @@ export function useChat() {
   const { pageState, generatePage, regenerateSection, editSectionByPrompt, getComposedPage, hasGeneratedPage } = usePageGeneration();
   const { updateProject, currentProject } = useProject();
   const { handlePromptSubmission } = useProjectFlow();
+
+  // Handle completion of generation for startGenerationWithPrompt
+  useEffect(() => {
+    // Only handle completion if we're in loading state and generation is complete
+    if (state.isLoading && state.currentLoadingMessageId && !pageState.isPlanning && !pageState.isGenerating && pageState.sections.length > 0) {
+      const handleGenerationComplete = async () => {
+        try {
+          const composedPage = await getComposedPage();
+          
+          // Update project in database - get project ID from URL if currentProject is not available
+          try {
+            console.log('Attempting to update project with composed page:', { currentProject: !!currentProject });
+            if (currentProject) {
+              console.log('Updating project:', currentProject.id);
+              await updateProject(composedPage);
+              console.log('Project updated successfully');
+            } else {
+              // Try to get project ID from URL as fallback
+              const pathParts = window.location.pathname.split('/');
+              const projectId = pathParts[2]; // /project/:id
+              if (projectId) {
+                console.log('Updating project using URL ID:', projectId);
+                // Import ProjectService directly for this fallback
+                const { ProjectService } = await import('../services/projectService');
+                await ProjectService.updateProject(projectId, composedPage);
+                console.log('Project updated successfully via fallback');
+              } else {
+                console.warn('No project ID available for update');
+              }
+            }
+          } catch (saveError) {
+            console.error('Failed to update project:', saveError);
+            // Continue with UI update even if save fails
+          }
+          
+          // Get list of successfully generated sections
+          const generatedSections = pageState.sections.filter(s => s.isGenerated);
+          const failedSections = pageState.sections.filter(s => !s.isGenerated);
+          
+          // Create a more detailed success message
+          let successMessage = `✅ Page generated successfully!\n`;
+          successMessage += `Sections created: ${generatedSections.map(s => s.name).join(', ')}.\n`;
+          
+          // Add information about failed sections if any
+          if (failedSections.length > 0) {
+            successMessage += `\n⚠️ Some sections failed to generate: ${failedSections.map(s => s.name).join(', ')}.\n`;
+            successMessage += `You can try regenerating these sections individually.`;
+          }
+          
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'assistant',
+            content: successMessage,
+            timestamp: new Date(),
+            generatedFiles: composedPage,
+            pagePlan: pageState.plan,
+          };
+
+          setState(prev => ({
+            ...prev,
+            messages: [...prev.messages, assistantMessage],
+            isLoading: false,
+            currentLoadingMessageId: null,
+          }));
+        } catch (error) {
+          console.error('Error getting composed page:', error);
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            currentLoadingMessageId: null,
+            error: 'Failed to format page content'
+          }));
+        }
+      };
+
+      handleGenerationComplete();
+    }
+  }, [state.isLoading, state.currentLoadingMessageId, pageState.isPlanning, pageState.isGenerating, pageState.sections, pageState.plan, getComposedPage, updateProject, currentProject]);
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: Message = {
@@ -34,8 +112,12 @@ export function useChat() {
     }));
 
     try {
-      // Handle project creation/routing first if needed
-      await handlePromptSubmission(content);
+      // Only handle project creation/routing if we're on the home page
+      // If we're already in a project workspace, skip this step
+      const isOnHomePage = window.location.pathname === '/';
+      if (isOnHomePage) {
+        await handlePromptSubmission(content);
+      }
       
       // Determine if this is an initial generation or an edit
       const isInitialGeneration = !hasGeneratedPage();
@@ -55,6 +137,14 @@ export function useChat() {
                 try {
                   if (currentProject) {
                     await updateProject(composedPage);
+                  } else {
+                    // Try to get project ID from URL as fallback
+                    const pathParts = window.location.pathname.split('/');
+                    const projectId = pathParts[2]; // /project/:id
+                    if (projectId) {
+                      const { ProjectService } = await import('../services/projectService');
+                      await ProjectService.updateProject(projectId, composedPage);
+                    }
                   }
                 } catch (saveError) {
                   console.warn('Failed to update project:', saveError);
@@ -124,6 +214,14 @@ export function useChat() {
                 try {
                   if (currentProject) {
                     await updateProject(composedPage);
+                  } else {
+                    // Try to get project ID from URL as fallback
+                    const pathParts = window.location.pathname.split('/');
+                    const projectId = pathParts[2]; // /project/:id
+                    if (projectId) {
+                      const { ProjectService } = await import('../services/projectService');
+                      await ProjectService.updateProject(projectId, composedPage);
+                    }
                   }
                 } catch (saveError) {
                   console.warn('Failed to update project:', saveError);
@@ -234,11 +332,56 @@ export function useChat() {
     });
   }, []);
 
+  const startGenerationWithPrompt = useCallback(async (prompt: string) => {
+    // This function is used to automatically start generation when a project is created
+    // It bypasses the project creation step since the project already exists
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: prompt,
+      timestamp: new Date(),
+    };
+
+    // Add user message to chat
+    setState(prev => ({
+      ...prev,
+      messages: [userMessage],
+      isLoading: true,
+      error: null,
+      currentLoadingMessageId: 'loading-' + Date.now().toString(),
+    }));
+
+    try {
+      // Start initial page generation
+      await generatePage(prompt);
+      
+      // The completion will be handled by the useEffect that watches pageState changes
+      // This is more reliable than using closures over pageState
+      
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: error instanceof Error ? error.message : 'An error occurred while processing your request.',
+        timestamp: new Date(),
+      };
+
+      setState(prev => ({
+        ...prev,
+        messages: [userMessage, errorMessage],
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'An error occurred',
+        currentLoadingMessageId: null,
+      }));
+    }
+  }, [generatePage]);
+
   return {
     ...state,
     sendMessage,
     loadProjectIntoChat,
     clearChat,
+    startGenerationWithPrompt,
     pageState,
     regenerateSection,
     getComposedPage,
