@@ -82,7 +82,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                             {index + 1}
                           </span>
                           <span className="text-onyx-text-secondary">{section.name}</span>
-                          {onRegenerateSection && (
+                          {/* {onRegenerateSection && (
                             <button
                               onClick={() => onRegenerateSection(section.id)}
                               className="ml-auto p-1 hover:bg-onyx-bg-secondary rounded text-onyx-text-disabled hover:text-onyx-text-secondary"
@@ -90,7 +90,7 @@ export function MessageBubble({ message, pageState, onRegenerateSection }: Messa
                             >
                               <RefreshCw className="w-3 h-3" />
                             </button>
-                          )}
+                          )} */}
                         </div>
                       ))}
                     </div>
