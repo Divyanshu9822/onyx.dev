@@ -1,5 +1,5 @@
-import JSZip from 'jszip';
 import { EditorFile } from '../types';
+import { buildZip } from '../utils/buildZip';
 
 const NETLIFY_TOKEN = import.meta.env.VITE_NETLIFY_TOKEN;
 
@@ -29,50 +29,24 @@ export async function deployToNetlify(files: EditorFile[]): Promise<DeployResult
   }
 
   try {
-    // Create ZIP file
-    const zip = new JSZip();
+    // Extract file contents
+    const htmlFile = files.find(f => f.name === 'index.html');
+    const cssFile = files.find(f => f.name === 'style.css');
+    const jsFile = files.find(f => f.name === 'script.js');
     
-    // Process files and ensure proper structure
-    files.forEach(file => {
-      let content = file.content;
-      
-      // For HTML files, ensure they reference the CSS and JS files properly
-      if (file.name === 'index.html') {
-        // Remove any existing external references
-        content = content.replace(/<link[^>]*rel=["']stylesheet["'][^>]*>/gi, '');
-        content = content.replace(/<link[^>]*href=["']style\.css["'][^>]*>/gi, '');
-        content = content.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, '');
-        
-        // Add proper references to external files
-        const cssFile = files.find(f => f.name === 'style.css');
-        const jsFile = files.find(f => f.name === 'script.js');
-        
-        if (cssFile && cssFile.content.trim()) {
-          const cssLink = '<link rel="stylesheet" href="style.css">';
-          if (content.includes('</head>')) {
-            content = content.replace('</head>', `  ${cssLink}\n</head>`);
-          } else if (content.includes('<head>')) {
-            content = content.replace('<head>', `<head>\n  ${cssLink}`);
-          } else {
-            content = content.replace('<html>', `<html>\n<head>\n  ${cssLink}\n</head>`);
-          }
-        }
-        
-        if (jsFile && jsFile.content.trim()) {
-          const jsScript = '<script src="script.js"></script>';
-          if (content.includes('</body>')) {
-            content = content.replace('</body>', `  ${jsScript}\n</body>`);
-          } else {
-            content = content + `\n${jsScript}`;
-          }
-        }
-      }
-      
-      zip.file(file.name, content);
+    if (!htmlFile) {
+      return {
+        success: false,
+        error: 'HTML file is required for deployment'
+      };
+    }
+    
+    // Create ZIP file using the utility function
+    const zipBlob = await buildZip({
+      html: htmlFile.content,
+      css: cssFile?.content || '',
+      js: jsFile?.content || ''
     });
-
-    // Generate ZIP blob
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
 
     // Deploy to Netlify - use proxy in development, direct API in production
     const isDevelopment = import.meta.env.DEV;

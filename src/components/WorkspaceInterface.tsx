@@ -5,6 +5,7 @@ import { useEditor } from '../hooks/useEditor';
 import { GeneratedFiles, PageState } from '../types';
 import { Eye, Code, Download, ExternalLink, Globe, Loader2, CheckCircle, AlertCircle, Copy, RefreshCw } from 'lucide-react';
 import { deployToNetlify, DeployResult } from '../services/netlifyApi';
+import { buildZip } from '../utils/buildZip';
 
 interface WorkspaceInterfaceProps {
   generatedFiles?: GeneratedFiles;
@@ -27,25 +28,26 @@ export function WorkspaceInterface({ generatedFiles, pageState, onRegenerateSect
     }
   }, [generatedFiles, loadGeneratedFiles]);
 
-  const handleDownloadFiles = () => {
+  const handleDownloadFiles = async () => {
     if (generatedFiles) {
-      const filesToDownload = [
-        { name: 'index.html', content: generatedFiles.html },
-        { name: 'style.css', content: generatedFiles.css },
-        { name: 'script.js', content: generatedFiles.js }
-      ];
-
-      filesToDownload.forEach(file => {
-        const blob = new Blob([file.content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
+      try {
+        const zipBlob = await buildZip({
+          html: generatedFiles.html,
+          css: generatedFiles.css,
+          js: generatedFiles.js
+        });
+        
+        const url = URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = file.name;
+        a.download = 'onyx-landing-page.zip';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-      });
+      } catch (error) {
+        console.error('Error creating zip file:', error);
+      }
     }
   };
 
