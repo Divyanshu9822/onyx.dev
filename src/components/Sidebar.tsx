@@ -9,9 +9,11 @@ interface SidebarProps {
   onNewChat: () => void;
   onSelectProject: (projectId: string) => void;
   currentProjectId?: string;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
-export function Sidebar({ isVisible, onNewChat, onSelectProject, currentProjectId }: SidebarProps) {
+export function Sidebar({ isVisible, onNewChat, onSelectProject, currentProjectId, onMouseEnter, onMouseLeave }: SidebarProps) {
   const { user, signOut } = useAuth();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -103,6 +105,8 @@ export function Sidebar({ isVisible, onNewChat, onSelectProject, currentProjectI
         className={`fixed left-0 top-0 h-full w-80 bg-onyx-surface border-r border-onyx-border shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isVisible ? 'translate-x-0' : '-translate-x-full'
         }`}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         <div className="flex flex-col h-full">
           {/* Header */}

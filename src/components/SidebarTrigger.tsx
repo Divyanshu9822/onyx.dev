@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface SidebarTriggerProps {
   onToggle: (visible: boolean) => void;
@@ -7,29 +7,37 @@ interface SidebarTriggerProps {
 
 export function SidebarTrigger({ onToggle, isVisible }: SidebarTriggerProps) {
   const [isHovering, setIsHovering] = useState(false);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const isAtLeftEdge = e.clientX <= 10;
-      const shouldShow = isAtLeftEdge || isVisible;
+      const isOverSidebar = e.clientX <= 320; // Sidebar width is 320px (w-80)
       
-      if (isAtLeftEdge && !isHovering) {
+      // Clear any pending hide timeout
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+      
+      if (isAtLeftEdge && !isVisible) {
         setIsHovering(true);
         onToggle(true);
-      } else if (!isAtLeftEdge && !isVisible && isHovering) {
+      } else if (!isOverSidebar && isVisible && !isAtLeftEdge) {
+        // Mouse is not over sidebar area and not at left edge
         setIsHovering(false);
         // Add a small delay before hiding to prevent flickering
-        setTimeout(() => {
-          if (!isVisible) {
-            onToggle(false);
-          }
+        hideTimeoutRef.current = setTimeout(() => {
+          onToggle(false);
+          hideTimeoutRef.current = null;
         }, 300);
       }
     };
 
     const handleMouseLeave = () => {
-      if (!isVisible) {
-        setIsHovering(false);
+      // When mouse leaves the document, hide the sidebar
+      setIsHovering(false);
+      if (isVisible) {
         onToggle(false);
       }
     };
@@ -40,8 +48,11 @@ export function SidebarTrigger({ onToggle, isVisible }: SidebarTriggerProps) {
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
     };
-  }, [onToggle, isVisible, isHovering]);
+  }, [onToggle, isVisible]);
 
   return (
     <div
@@ -50,13 +61,15 @@ export function SidebarTrigger({ onToggle, isVisible }: SidebarTriggerProps) {
       } transition-colors duration-200`}
       onMouseEnter={() => {
         setIsHovering(true);
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
         onToggle(true);
       }}
       onMouseLeave={() => {
-        if (!isVisible) {
-          setIsHovering(false);
-          onToggle(false);
-        }
+        setIsHovering(false);
+        // Don't immediately hide, let the mousemove handler deal with it
       }}
     />
   );

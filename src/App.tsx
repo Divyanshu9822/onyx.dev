@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { ChatInterface } from './components/ChatInterface';
 import { AuthModal } from './components/AuthModal';
@@ -20,6 +20,7 @@ function ProjectPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [isLoadingProject, setIsLoadingProject] = useState(false);
+  const sidebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   
   const hasMessages = messages.length > 0;
@@ -69,6 +70,10 @@ function ProjectPage() {
     clearChat();
     navigate('/');
     setSidebarVisible(false);
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
   };
 
   const handleSelectProject = (selectedProjectId: string) => {
@@ -76,6 +81,26 @@ function ProjectPage() {
       navigate(`/project/${selectedProjectId}`);
     }
     setSidebarVisible(false);
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
+  };
+
+  const handleSidebarMouseEnter = () => {
+    // Clear any pending hide timeout when mouse enters sidebar
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
+  };
+
+  const handleSidebarMouseLeave = () => {
+    // Close sidebar when mouse leaves with a small delay
+    sidebarTimeoutRef.current = setTimeout(() => {
+      setSidebarVisible(false);
+      sidebarTimeoutRef.current = null;
+    }, 300);
   };
 
   const handleLogoClick = () => {
@@ -115,6 +140,8 @@ function ProjectPage() {
         onNewChat={handleNewChat}
         onSelectProject={handleSelectProject}
         currentProjectId={projectId}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
       />
 
       {/* Sidebar Overlay */}
@@ -173,6 +200,7 @@ function HomePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const sidebarTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   
   const hasMessages = messages.length > 0;
@@ -196,11 +224,35 @@ function HomePage() {
     clearChat();
     navigate('/');
     setSidebarVisible(false);
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
   };
 
   const handleSelectProject = (projectId: string) => {
     navigate(`/project/${projectId}`);
     setSidebarVisible(false);
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
+  };
+
+  const handleSidebarMouseEnter = () => {
+    // Clear any pending hide timeout when mouse enters sidebar
+    if (sidebarTimeoutRef.current) {
+      clearTimeout(sidebarTimeoutRef.current);
+      sidebarTimeoutRef.current = null;
+    }
+  };
+
+  const handleSidebarMouseLeave = () => {
+    // Close sidebar when mouse leaves with a small delay
+    sidebarTimeoutRef.current = setTimeout(() => {
+      setSidebarVisible(false);
+      sidebarTimeoutRef.current = null;
+    }, 300);
   };
 
   // Show loading state while checking authentication
@@ -235,6 +287,8 @@ function HomePage() {
         isVisible={sidebarVisible}
         onNewChat={handleNewChat}
         onSelectProject={handleSelectProject}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
       />
 
       {/* Sidebar Overlay */}
