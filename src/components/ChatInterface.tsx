@@ -109,14 +109,20 @@ export function ChatInterface({
         <div className="w-2/5 bg-onyx-surface border-r border-onyx-border flex flex-col">
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 space-y-6 bg-onyx-bg-primary">
-              {messages.map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  pageState={message.id === currentLoadingMessageId ? pageState : undefined}
-                  onRegenerateSection={onRegenerateSection}
-                />
-              ))}
+              {messages.map((message, index) => {
+                // For edit flows, show pageState on the last assistant message if we're loading
+                const shouldShowPageState = message.id === currentLoadingMessageId ||
+                  (isLoading && message.type === 'assistant' && index === messages.length - 1);
+                
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    pageState={shouldShowPageState ? pageState : undefined}
+                    onRegenerateSection={onRegenerateSection}
+                  />
+                );
+              })}
               {/* Show loading indicator only if we don't have a specific message to update */}
               {(isLoading && !currentLoadingMessageId) && (
                 <div className="flex justify-start">

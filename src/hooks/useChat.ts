@@ -77,12 +77,15 @@ export function useChat() {
             pagePlan: pageState.plan,
           };
 
-          setState(prev => ({
-            ...prev,
-            messages: [...prev.messages, assistantMessage],
-            isLoading: false,
-            currentLoadingMessageId: null,
-          }));
+          // Add a small delay to ensure the user sees the generation completion
+          setTimeout(() => {
+            setState(prev => ({
+              ...prev,
+              messages: [...prev.messages, assistantMessage],
+              isLoading: false,
+              currentLoadingMessageId: null,
+            }));
+          }, 500);
         } catch (error) {
           console.error('useEffect: Error getting composed page:', error);
           setState(prev => ({
@@ -201,12 +204,15 @@ export function useChat() {
                   pagePlan: pageState.plan,
                 };
 
-                setState(prev => ({
-                  ...prev,
-                  messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
-                  isLoading: false,
-                  currentLoadingMessageId: null,
-                }));
+                // Add a small delay to ensure the user sees the generation completion
+                setTimeout(() => {
+                  setState(prev => ({
+                    ...prev,
+                    messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
+                    isLoading: false,
+                    currentLoadingMessageId: null,
+                  }));
+                }, 500);
               } catch (error) {
                 console.error('Error getting composed page:', error);
                 setState(prev => ({
@@ -238,7 +244,8 @@ export function useChat() {
           const checkEditCompletion = () => {
             console.log('Checking edit completion:', {
               isEditing: pageState.isEditing,
-              sectionsGenerating: pageState.sections.filter(s => s.isGenerating).length
+              sectionsGenerating: pageState.sections.filter(s => s.isGenerating).length,
+              currentLoadingMessageId: state.currentLoadingMessageId
             });
             
             if (!pageState.isEditing && !pageState.sections.some(s => s.isGenerating)) {
@@ -286,12 +293,15 @@ export function useChat() {
                     editResult: editResult,
                   };
 
-                  setState(prev => ({
-                    ...prev,
-                    messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
-                    isLoading: false,
-                    currentLoadingMessageId: null,
-                  }));
+                  // Add a small delay to ensure the user sees the edit completion
+                  setTimeout(() => {
+                    setState(prev => ({
+                      ...prev,
+                      messages: [...prev.messages.slice(0, -1), userMessage, assistantMessage],
+                      isLoading: false,
+                      currentLoadingMessageId: null,
+                    }));
+                  }, 500);
                 } catch (error) {
                   console.error('Error getting composed page after edit:', error);
                   setState(prev => ({
