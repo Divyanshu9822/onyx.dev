@@ -6,7 +6,7 @@ import { Header } from '../common/Header';
 import { Sidebar } from '../common/Sidebar';
 import { SidebarTrigger } from '../common/SidebarTrigger';
 import { AuthModal } from '../common/AuthModal';
-import { ChatInterface } from '../chat/ChatInterface';
+import { ChatInterface } from '../ChatInterface';
 import bg from '../../assets/bg.png';
 
 export function WorkspaceView() {

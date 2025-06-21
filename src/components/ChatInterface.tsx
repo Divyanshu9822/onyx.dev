@@ -2,10 +2,10 @@ import React from 'react';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { WorkspaceInterface } from './WorkspaceInterface';
-import { AuthModal } from './AuthModal';
+import { AuthModal } from './common/AuthModal';
 import { Message, PageState, GeneratedFiles } from '../types';
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../store';
 import biglogo from '../assets/biglogo.png';
 
 interface ChatInterfaceProps {
@@ -30,7 +30,7 @@ export function ChatInterface({
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const [composedFiles, setComposedFiles] = useState<GeneratedFiles | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAppStore();
   
   const hasMessages = messages.length > 0;
   const latestMessage = messages[messages.length - 1];

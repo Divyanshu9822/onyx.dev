@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Send, Loader2, Sparkles } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAppStore } from '../store';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -11,7 +11,7 @@ interface ChatInputProps {
 
 export function ChatInput({ onSendMessage, isLoading, hasGeneratedPage = false, onAuthRequired }: ChatInputProps) {
   const [message, setMessage] = useState('');
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAppStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,7 +6,7 @@ import { Header } from '../common/Header';
 import { Sidebar } from '../common/Sidebar';
 import { SidebarTrigger } from '../common/SidebarTrigger';
 import { AuthModal } from '../common/AuthModal';
-import { ChatInput } from '../chat/ChatInput';
+import { ChatInput } from '../ChatInput';
 import { LogIn } from 'lucide-react';
 import biglogo from '../../assets/biglogo.png';
 import bg from '../../assets/bg.png';
